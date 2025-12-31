@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="alternate" type="application/atom+xml" title="ben.report" href="/feed.xml">
+
+  <style type="text/css">
+    @import url("https://rsms.me/inter/inter.css");
+
+    /* Base typography */
+    body {
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      font-size: 16px;
+      letter-spacing: -0.004em;
+      color: var(--fg);
+      background-color: var(--fg);
+      margin: 1em 0 0 0;
+    }
+
+    p,
+    h1,
+    h2 {
+      overflow-wrap: break-word;
+    }
+
+    h1,
+    h2 {
+      font-weight: 600;
+    }
+
+    h1 {
+      margin: 2.5rem 0;
+      font-size: 1.25rem;
+      font-weight: 500;
+    }
+
+    h2 {
+      margin: 2rem 0 1rem 0;
+      font-size: 1.125em;
+      border-top: 1px solid var(--bg-accent-1);
+      padding-top: 0.3em;
+    }
+
+    p {
+      margin: 0.5rem 0 1.5rem 0;
+    }
+
+    /* CSS Variables */
+    :root {
+      --narrow-padding: max(1.5em, calc((100vw - 650px) / 2));
+      --bg: #f4f5ef;
+      --fg: #2a4644;
+      --bg-accent-1: #8aa899;
+      --bg-accent-2: #f8f8f6;
+      --bg-accent-3: #c4d4cc;
+      --fg-accent-1: #568f81;
+      --fg-accent-2: #455e58;
+      --bg-transparent: rgba(244, 245, 239, 0.85);
+      --bg-accent-transparent: rgba(138, 168, 153, 0.3);
+      --shadow: 0 2px 4px var(--shadow-color), 0 4px 8px var(--shadow-color), 0 8px 16px var(--shadow-color);
+      --shadow-color: rgba(0, 0, 0, 0.05);
+      --navName-color: #3f6d56;
+    }
+
+    [data-theme="dark"] {
+      --bg: #2a4644;
+      --fg: #f4f5ef;
+      --bg-accent-1: #568f81;
+      --bg-accent-2: #455e58;
+      --bg-accent-3: #43706c;
+      --fg-accent-1: #8aa899;
+      --fg-accent-2: #f8f8f6;
+      --bg-transparent: rgba(42, 70, 68, 0.85);
+      --bg-accent-transparent: rgba(86, 143, 129, 0.3);
+      --shadow-color: rgba(0, 0, 0, 0.1);
+      --navName-color: #76ba98;
+    }
+
+    [data-theme="dark"] .dark-icon {
+      opacity: 0%;
+    }
+
+    [data-theme="dark"] .light-icon {
+      opacity: 100%;
+    }
+
+    /* Box model reset */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      padding: 0;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      box-sizing: content-box;
+    }
+
+    /* Links */
+    body a {
+      color: var(--fg);
+      text-underline-offset: 3px;
+      text-decoration-color: var(--bg-accent-1);
+      text-decoration-thickness: 1.5px;
+    }
+
+    body a:not(nav a, .tag):hover {
+      text-decoration-color: var(--fg-accent-1);
+      text-decoration-thickness: 2px;
+    }
+
+    /* Layout - Grid */
+    main {
+      background-color: var(--bg);
+      display: grid;
+      grid-template-columns: 1fr 350px 650px minmax(0, 350px) 1fr;
+    }
+
+    article {
+      padding-bottom: 7em;
+      padding-top: calc(65px + 4.5em - 0.3em);
+      grid-column: 3;
+    }
+
+    article>:first-child {
+      margin-top: 0;
+    }
+
+    article p:first-child {
+      margin-top: 0;
+    }
+
+    article>ul {
+      padding-left: 1em;
+    }
+
+    article>ul li {
+      padding-left: 0.5em;
+    }
+
+    li::marker {
+      margin-left: -0.1em;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: sticky;
+      top: 1em;
+      height: 100vh;
+      padding: 2em 2em;
+      grid-column: 2;
+      display: flex;
+      flex-direction: column;
+      justify-content: start;
+      z-index: 1;
+    }
+
+    .sidebar .sidebar_titles h1 {
+      margin-bottom: 0;
+    }
+
+    .sidebar .sidebar_titles h2 {
+      margin: 0;
+      padding-top: 0;
+      font-size: 1em;
+      font-weight: 400;
+      border-top: 0;
+    }
+
+    /* Navigation */
+    nav {
+      font-size: 16px;
+      font-weight: 500;
+      background: var(--bg-transparent);
+      backdrop-filter: blur(10px);
+      height: 65px;
+      margin: -0.3em -0.5em 0 -0.5em;
+      padding: 0.3em 0.5em 0 0.5em;
+      width: fit-content;
+    }
+
+    nav:hover {
+      filter: none;
+      transition: 0.3s ease;
+    }
+
+    nav:hover a,
+    nav:hover a:visited {
+      color: var(--fg);
+    }
+
+    nav:hover svg * {
+      fill: var(--navName-color);
+    }
+
+    nav:hover .active {
+      text-decoration-color: var(--fg);
+    }
+
+    nav ul li {
+      display: inline-block;
+    }
+
+    nav .nav-main {
+      width: fit-content;
+      padding: 0.3em 1.1em;
+      margin: 0 -1.1em;
+    }
+
+    nav .nav-main li:not(:last-child) {
+      padding-right: 0.5em;
+    }
+
+    nav a,
+    nav a:visited,
+    nav .navName {
+      padding: 0;
+      text-decoration: none;
+      color: var(--bg-accent-1);
+    }
+
+    nav a:hover,
+    nav a:visited:hover,
+    nav .navName:hover {
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      text-decoration-color: var(--fg-accent-1);
+    }
+
+    nav .active {
+      text-decoration: underline;
+      text-decoration-color: var(--bg-accent-1);
+      text-underline-offset: 4px;
+    }
+
+    nav .home-icon {
+      display: none;
+      margin-right: 1em;
+      font-size: 24px;
+    }
+
+    .navName * {
+      margin: 0;
+      padding: 0;
+      display: inline-block;
+    }
+
+    .navName span#hover,
+    .navName span#normal {
+      margin-left: -0.24em;
+      margin-right: -0.1em;
+    }
+
+    .navName span#normal {
+      margin-right: calc(0.27px - 0.2em);
+    }
+
+    .navName span#hover {
+      display: none;
+    }
+
+    .navName:hover #normal {
+      display: none;
+    }
+
+    .navName:hover #hover {
+      display: inline-block;
+    }
+
+    /* Post metadata */
+    .post-footer {
+      font-size: 14px;
+      padding-top: 0.5em;
+      color: var(--bg-accent-1);
+    }
+
+    .flexbox {
+      display: flex;
+      flex-wrap: wrap;
+      column-gap: 0.3em;
+      row-gap: 0.8em;
+    }
+
+    .flexbox li {
+      display: inline-block;
+    }
+
+    .tag {
+      text-decoration: none;
+      padding: 0.3em 0.7em;
+      border-radius: 20px;
+      background-color: var(--bg);
+      color: var(--bg-accent-1);
+      border: 1px solid var(--bg-accent-1);
+      transition: 0.1s ease;
+    }
+
+    .tag:hover {
+      color: var(--fg);
+      border: 1px solid var(--fg-accent-1);
+      box-shadow: 0 2px 2px var(--shadow-color), 0 4px 4px var(--shadow-color), 0 8px 8px var(--shadow-color);
+    }
+
+    /* Post navigation */
+    .post-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1em;
+      margin: 0 -1em;
+    }
+
+    .post-nav * {
+      color: var(--fg-accent-2);
+    }
+
+    .post-nav-arrow {
+      width: 50%;
+    }
+
+    .post-nav-arrow p {
+      margin: 0;
+    }
+
+    .prev-page p {
+      padding-right: 0.5em;
+    }
+
+    .truncate {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 500;
+    }
+
+    /* Table of contents */
+    .toc {
+      margin-top: auto;
+      font-weight: 700;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .toc:hover {
+      background: var(--bg-transparent);
+      backdrop-filter: blur(5px);
+    }
+
+    .toc:hover * {
+      color: var(--fg-accent-1) !important;
+    }
+
+    .toc * {
+      padding: 0;
+      margin: 0;
+      text-overflow: ellipsis;
+      color: transparent;
+      transition: 0.2s ease-in-out;
+    }
+
+    .toc .toc-return {
+      color: var(--bg-accent-1);
+    }
+
+    .toc li {
+      display: block;
+      margin-bottom: 0.3em;
+    }
+
+    .toc a {
+      text-decoration: none;
+    }
+
+    .toc a:hover {
+      color: var(--fg) !important;
+    }
+
+    .toc>ul {
+      margin-bottom: 1em;
+    }
+
+    .toc>ul ul {
+      font-weight: 400;
+      line-height: 1.2;
+      margin-top: 0.3em;
+      margin-bottom: 0.8em;
+    }
+
+    .narrow-remove {
+      display: block;
+    }
+
+    /* Footer */
+    footer {
+      font-size: 14px;
+      color: var(--bg);
+      margin: auto;
+      padding: 2.3em 0;
+      display: grid;
+      grid-template-columns: 1fr calc(650px + 350px) minmax(350px, 1fr) 1fr;
+      box-shadow: inset 0 2px 2px var(--shadow-color), inset 0 4px 4px var(--shadow-color), inset 0 8px 8px var(--shadow-color), inset 0 8px 8px var(--shadow-color);
+    }
+
+    footer a {
+      color: var(--bg-accent-1);
+      text-decoration-color: var(--bg-accent-1);
+    }
+
+    footer p {
+      margin: 0 2em;
+      grid-column: 2;
+    }
+
+    /* Theme toggle button */
+    button {
+      position: relative;
+      left: 5px;
+      top: -14px;
+      width: fit-content;
+      border: none;
+      cursor: pointer;
+    }
+
+    p button {
+      margin: 0;
+    }
+
+    .light-icon,
+    .dark-icon {
+      position: absolute;
+    }
+
+    .light-icon *,
+    .dark-icon * {
+      fill: var(--bg-accent-1);
+    }
+
+    .light-icon {
+      opacity: 0%;
+    }
+
+    .dark-icon {
+      opacity: 100%;
+    }
+
+    /* Responsive styles */
+    @media screen and (max-width: 1000px) {
+      body {
+        line-height: 1.7;
+      }
+
+      h1 {
+        line-height: 1.4;
+        margin: 3rem 0;
+      }
+
+      h2 {
+        font-weight: 600;
+        font-size: 1.2em;
+      }
+
+      main {
+        display: block;
+        grid-template-rows: 85px 1fr;
+        grid-template-columns: 1fr !important;
+      }
+
+      article {
+        box-shadow: none;
+        border: none;
+        width: 100vw;
+        padding: 0em var(--narrow-padding);
+        padding-bottom: 7em;
+      }
+
+      nav {
+        display: flex;
+        margin: 0;
+      }
+
+      nav a,
+      nav a:visited {
+        color: var(--fg-accent-1);
+      }
+
+      nav .navName {
+        background: none;
+        border: none;
+        padding-right: 1em;
+      }
+
+      nav .navName .home-icon {
+        display: block;
+        margin: -0.3em 0;
+        padding: 0;
+        font-size: 26px;
+      }
+
+      nav .name-mix {
+        display: none;
+      }
+
+      nav button {
+        position: initial;
+        margin-left: auto;
+        margin-right: 20px;
+        margin-bottom: 20px;
+      }
+
+      .sidebar {
+        padding: 2em var(--narrow-padding);
+        position: inherit;
+        height: fit-content;
+      }
+
+      .sidebar h1 {
+        margin-bottom: 0;
+      }
+
+      .sidebar nav {
+        padding: 0;
+      }
+
+      ul {
+        padding-left: 1.2em;
+      }
+
+      footer {
+        margin: 0;
+        display: block;
+      }
+
+      .post-nav {
+        font-size: 16px;
+      }
+
+      .narrow-remove {
+        display: none;
+      }
+    }
+
+    @media screen and (max-width: 470px) {
+      body {
+        font-size: 16px;
+      }
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <main id="main" role="main">
+
+    <div class="sidebar">
+      <nav role="navigation">
+
+        <a class="navName" href="https://ben.report">
+          <span class="home-icon">🏠</span>
+          <div class="name-mix">
+            <span>ben.</span>
+            <span id="hover">porter</span>
+            <span id="normal">report</span>
+          </div>
+        </a>
+
+        <ul class="nav-main">
+
+          <li class="">
+            <a href="https://ben.report/posts">Posts</a>
+          </li>
+
+          <li class="">
+            <a href="https://ben.report/photos">Photos</a>
+          </li>
+
+          <li class="">
+            <a href="https://ben.report/books">Books</a>
+          </li>
+
+        </ul>
+      </nav>
+
+      <div class="sidebar_titles">
+        <h1>Tools</h1>
+      </div>
+    </div>
+
+    <article>
+      <p>
+        This is a collection of simple, low-stakes tools, modelled on a similar (but much more elaborate) page started by <a href="https://tools.simonwillison.net/">Simon Willison</a>.
+      </p>
+      <h2>Tools List</h2>
+      <ul>
+        <li><a href="/playlist-covers.html">Playlists cover generator</a></li>
+        <li><a href="/recipes.html">Recipe tracker</a></li>
+      </ul>
+
+    </article>
+  </main>
+
+  <footer class="footer" role="contentinfo">
+    <p>
+      © <a href="https://github.com/penborter/ben-report" target="_blank" rel="noopener noreferrer">Ben Porter</a> —
+      organic, farm-to-table code since 2020. You can also read the <a href="https://ben.report/colophon">colophon</a>.
+      <button class="btn-toggle">
+        <svg class="dark-icon" width="20" height="20">
+          <rect x="1" y="1" width="8" height="8" fill="var(--fg-accent-1)" rx="1" ry="1"></rect>
+          <rect x="11" y="1" width="8" height="8" fill="var(--fg-accent-1)" rx="1" ry="1"></rect>
+          <rect x="1" y="11" width="8" height="8" fill="var(--fg-accent-1)" rx="1" ry="1"></rect>
+        </svg>
+        <svg class="light-icon" width="20" height="20">
+          <rect x="11" y="1" width="8" height="8" fill="var(--fg-accent-1)" rx="1" ry="1"></rect>
+          <rect x="1" y="11" width="8" height="8" fill="var(--fg-accent-1)" rx="1" ry="1"></rect>
+          <rect x="11" y="11" width="8" height="8" fill="var(--fg-accent-1)" rx="1" ry="1"></rect>
+        </svg>
+      </button>
+
+
+    </p>
+  </footer>
+
+  <script type="text/javascript">
+    const toggleSwitch = document.querySelector('.btn-toggle');
+    const currentTheme = localStorage.getItem('theme');
+
+    if (currentTheme) {
+      document.documentElement.setAttribute('data-theme', currentTheme);
+    }
+    else {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('theme','light');
+    }
+
+    function switchTheme(e) {
+      if (document.documentElement.getAttribute('data-theme') == 'light') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      }
+      else {        
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      }    
+    }
+
+    toggleSwitch.addEventListener('click', switchTheme);
+  </script>
+
+</body>
+</html>

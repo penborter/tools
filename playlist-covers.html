@@ -133,7 +133,7 @@
         #regenerateBtn:hover {
             background: #455e58;
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(74, 158, 255, 0.4);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         #exportBtn {
@@ -144,7 +144,17 @@
         #exportBtn:hover {
             background: #455e58;
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 208, 132, 0.4);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        #returnBtn {
+            border: 1px solid #568f81;
+        }
+
+        #returnBtn:hover {
+            background: #c4d4cc;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .hint {
@@ -246,6 +256,7 @@
 
                 <button id="regenerateBtn">🔄 Regenerate Pattern</button>
                 <button id="exportBtn">💾 Export as PNG (960x960)</button>
+                <a href="https://tools.ben.report"><button id="returnBtn">◀️ Return to Tools</button></a>
             </div>
         </div>
     </div>

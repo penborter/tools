@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recipe Tracker</title>
+
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+  <style type="text/css">
+    @import url("https://rsms.me/inter/inter.css");
+
+    /* Base typography */
+    body {
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      font-size: 16px;
+      letter-spacing: -0.004em;
+      color: var(--fg);
+      background-color: var(--fg);
+      margin: 1em 0 0 0;
+    }
+
+    p,
+    h1,
+    h2 {
+      overflow-wrap: break-word;
+    }
+
+    h1,
+    h2 {
+      font-weight: 600;
+    }
+
+    h1 {
+      margin: 2.5rem 0;
+      font-size: 1.25rem;
+      font-weight: 500;
+    }
+
+    h2 {
+      margin: 2rem 0 1rem 0;
+      font-size: 1.125em;
+      border-top: 1px solid var(--bg-accent-1);
+      padding-top: 0.3em;
+    }
+
+    p {
+      margin: 0.5rem 0 1.5rem 0;
+    }
+
+    /* CSS Variables */
+    :root {
+      --narrow-padding: max(1.5em, calc((100vw - 650px) / 2));
+      --bg: #f4f5ef;
+      --fg: #2a4644;
+      --bg-accent-1: #8aa899;
+      --bg-accent-2: #f8f8f6;
+      --bg-accent-3: #c4d4cc;
+      --fg-accent-1: #568f81;
+      --fg-accent-2: #455e58;
+      --bg-transparent: rgba(244, 245, 239, 0.85);
+      --bg-accent-transparent: rgba(138, 168, 153, 0.3);
+      --shadow: 0 2px 4px var(--shadow-color), 0 4px 8px var(--shadow-color), 0 8px 16px var(--shadow-color);
+      --shadow-color: rgba(0, 0, 0, 0.05);
+      --navName-color: #3f6d56;
+    }
+
+    [data-theme="dark"] {
+      --bg: #2a4644;
+      --fg: #f4f5ef;
+      --bg-accent-1: #568f81;
+      --bg-accent-2: #455e58;
+      --bg-accent-3: #43706c;
+      --fg-accent-1: #8aa899;
+      --fg-accent-2: #f8f8f6;
+      --bg-transparent: rgba(42, 70, 68, 0.85);
+      --bg-accent-transparent: rgba(86, 143, 129, 0.3);
+      --shadow-color: rgba(0, 0, 0, 0.1);
+      --navName-color: #76ba98;
+    }
+
+    [data-theme="dark"] .dark-icon {
+      opacity: 0%;
+    }
+
+    [data-theme="dark"] .light-icon {
+      opacity: 100%;
+    }
+
+    /* Box model reset */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      padding: 0;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      box-sizing: content-box;
+    }
+
+    /* Links */
+    body a {
+      color: var(--fg);
+      text-underline-offset: 3px;
+      text-decoration-color: var(--bg-accent-1);
+      text-decoration-thickness: 1.5px;
+    }
+
+    body a:not(nav a, .tag):hover {
+      text-decoration-color: var(--fg-accent-1);
+      text-decoration-thickness: 2px;
+    }
+
+    /* Layout - Grid */
+    main {
+      background-color: var(--bg);
+      display: grid;
+      grid-template-columns: 1fr 350px 650px minmax(0, 350px) 1fr;
+    }
+
+    article {
+      padding-bottom: 7em;
+      padding-top: calc(65px + 4.5em - 0.3em);
+      grid-column: 3;
+    }
+
+    article>:first-child {
+      margin-top: 0;
+    }
+
+    article p:first-child {
+      margin-top: 0;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: sticky;
+      top: 1em;
+      height: 100vh;
+      padding: 2em 2em;
+      grid-column: 2;
+      display: flex;
+      flex-direction: column;
+      justify-content: start;
+      z-index: 1;
+    }
+
+    .sidebar .sidebar_titles h1 {
+      margin-bottom: 0;
+    }
+
+    .sidebar .sidebar_titles h2 {
+      margin: 0;
+      padding-top: 0;
+      font-size: 1em;
+      font-weight: 400;
+      border-top: 0;
+    }
+
+    /* Navigation */
+    nav {
+      font-size: 16px;
+      font-weight: 500;
+      background: var(--bg-transparent);
+      backdrop-filter: blur(10px);
+      height: 65px;
+      margin: -0.3em -0.5em 0 -0.5em;
+      padding: 0.3em 0.5em 0 0.5em;
+      width: fit-content;
+    }
+
+    nav:hover {
+      filter: none;
+      transition: 0.3s ease;
+    }
+
+    nav:hover a,
+    nav:hover a:visited {
+      color: var(--fg);
+    }
+
+    nav:hover svg * {
+      fill: var(--navName-color);
+    }
+
+    nav:hover .active {
+      text-decoration-color: var(--fg);
+    }
+
+    nav ul li {
+      display: inline-block;
+    }
+
+    nav .nav-main {
+      width: fit-content;
+      padding: 0.3em 1.1em;
+      margin: 0 -1.1em;
+    }
+
+    nav .nav-main li:not(:last-child) {
+      padding-right: 0.5em;
+    }
+
+    nav a,
+    nav a:visited,
+    nav .navName {
+      padding: 0;
+      text-decoration: none;
+      color: var(--bg-accent-1);
+    }
+
+    nav a:hover,
+    nav a:visited:hover,
+    nav .navName:hover {
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      text-decoration-color: var(--fg-accent-1);
+    }
+
+    nav .active {
+      text-decoration: underline;
+      text-decoration-color: var(--bg-accent-1);
+      text-underline-offset: 4px;
+    }
+
+    nav .home-icon {
+      display: none;
+      margin-right: 1em;
+      font-size: 24px;
+    }
+
+    .navName * {
+      margin: 0;
+      padding: 0;
+      display: inline-block;
+    }
+
+    .navName span#hover,
+    .navName span#normal {
+      margin-left: -0.24em;
+      margin-right: -0.1em;
+    }
+
+    .navName span#normal {
+      margin-right: calc(0.27px - 0.2em);
+    }
+
+    .navName span#hover {
+      display: none;
+    }
+
+    .navName:hover #normal {
+      display: none;
+    }
+
+    .navName:hover #hover {
+      display: inline-block;
+    }
+
+    .narrow-remove {
+      display: block;
+    }
+
+    /* Footer */
+    footer {
+      font-size: 14px;
+      color: var(--bg);
+      margin: auto;
+      padding: 2.3em 0;
+      display: grid;
+      grid-template-columns: 1fr calc(650px + 350px) minmax(350px, 1fr) 1fr;
+      box-shadow: inset 0 2px 2px var(--shadow-color), inset 0 4px 4px var(--shadow-color), inset 0 8px 8px var(--shadow-color), inset 0 8px 8px var(--shadow-color);
+    }
+
+    footer a {
+      color: var(--bg-accent-1);
+      text-decoration-color: var(--bg-accent-1);
+    }
+
+    footer p {
+      margin: 0 2em;
+      grid-column: 2;
+    }
+
+    /* Theme toggle button */
+    button {
+      position: relative;
+      left: 5px;
+      top: -14px;
+      width: fit-content;
+      border: none;
+      cursor: pointer;
+    }
+
+    p button {
+      margin: 0;
+    }
+
+    .light-icon,
+    .dark-icon {
+      position: absolute;
+    }
+
+    .light-icon *,
+    .dark-icon * {
+      fill: var(--bg-accent-1);
+    }
+
+    .light-icon {
+      opacity: 0%;
+    }
+
+    .dark-icon {
+      opacity: 100%;
+    }
+
+    /* Recipe Tracker Styles */
+    .week-grid {
+      display: grid;
+      grid-template-columns: auto repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 2rem;
+    }
+
+    .week-grid .header {
+      font-weight: 600;
+      text-align: center;
+      padding: 0.5em 0.25em;
+      color: var(--fg-accent-2);
+      font-size: 0.875em;
+    }
+
+    .week-grid .row-label {
+      font-weight: 500;
+      padding: 0.5em 0.5em 0.5em 0;
+      display: flex;
+      align-items: center;
+      font-size: 0.875em;
+    }
+
+    .meal-cell {
+      position: relative;
+      min-height: 50px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: box-shadow 0.15s ease;
+    }
+
+    .meal-cell:hover {
+      box-shadow: 0 2px 8px var(--shadow-color);
+    }
+
+    .meal-cell-content {
+      padding: 0.5em;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 0.8em;
+      font-weight: 500;
+      line-height: 1.3;
+      border-radius: 6px;
+      min-height: 50px;
+    }
+
+    .meal-cell-content.empty {
+      background-color: var(--bg-accent-2);
+      border: 1px dashed var(--bg-accent-1);
+      color: var(--bg-accent-1);
+    }
+
+    .meal-cell-content.filled {
+      border: none;
+    }
+
+    .meal-cell select {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .meal-database {
+      margin-top: 1rem;
+    }
+
+    .meal-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 1rem 0;
+    }
+
+    .meal-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 0.75em;
+      border-bottom: 1px solid var(--bg-accent-3);
+      gap: 0.5em;
+    }
+
+    .meal-list li:last-child {
+      border-bottom: none;
+    }
+
+    .meal-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25em;
+      flex: 1;
+    }
+
+    .meal-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      flex-wrap: wrap;
+    }
+
+    .meal-name {
+      font-weight: 500;
+    }
+
+    .protein-tag {
+      font-size: 0.75em;
+      padding: 0.2em 0.5em;
+      border-radius: 12px;
+      background-color: var(--bg-accent-3);
+      color: var(--fg-accent-2);
+    }
+
+    .meal-ingredients {
+      font-size: 0.8em;
+      color: var(--bg-accent-1);
+      line-height: 1.4;
+    }
+
+    .meal-actions {
+      display: flex;
+      gap: 0.25em;
+    }
+
+    .action-btn {
+      background: none;
+      border: none;
+      color: var(--bg-accent-1);
+      cursor: pointer;
+      padding: 0.25em 0.4em;
+      font-size: 0.9em;
+      position: static;
+      left: auto;
+      top: auto;
+      border-radius: 4px;
+    }
+
+    .action-btn:hover {
+      color: var(--fg);
+      background-color: var(--bg-accent-transparent);
+    }
+
+    .meal-form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5em;
+      margin-bottom: 1rem;
+      padding: 1em;
+      background-color: var(--bg-accent-2);
+      border-radius: 6px;
+    }
+
+    .meal-form-row {
+      display: flex;
+      gap: 0.5em;
+      flex-wrap: wrap;
+    }
+
+    .meal-form input,
+    .meal-form select,
+    .meal-form textarea {
+      padding: 0.5em;
+      border: 1px solid var(--bg-accent-1);
+      border-radius: 4px;
+      background-color: var(--bg);
+      color: var(--fg);
+      font-family: inherit;
+      font-size: 1em;
+    }
+
+    .meal-form input[type="text"] {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .meal-form select {
+      min-width: 120px;
+    }
+
+    .meal-form textarea {
+      width: 100%;
+      min-height: 60px;
+      resize: vertical;
+    }
+
+    .meal-form input:focus,
+    .meal-form select:focus,
+    .meal-form textarea:focus {
+      outline: none;
+      border-color: var(--fg-accent-1);
+      box-shadow: 0 0 0 2px var(--bg-accent-transparent);
+    }
+
+    .btn {
+      padding: 0.5em 1em;
+      border: 1px solid var(--fg-accent-1);
+      border-radius: 4px;
+      background-color: var(--fg-accent-1);
+      color: var(--bg);
+      font-family: inherit;
+      font-size: 1em;
+      cursor: pointer;
+      position: static;
+      left: auto;
+      top: auto;
+    }
+
+    .btn:hover {
+      background-color: var(--fg-accent-2);
+      border-color: var(--fg-accent-2);
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      color: var(--fg-accent-1);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--bg-accent-transparent);
+      color: var(--fg);
+    }
+
+    .btn-small {
+      padding: 0.3em 0.6em;
+      font-size: 0.875em;
+    }
+
+    .export-import {
+      display: flex;
+      gap: 0.5em;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    .export-import input[type="file"] {
+      display: none;
+    }
+
+    /* Plan summary */
+    .plan-summary {
+      margin-bottom: 1rem;
+      font-size: 0.9em;
+    }
+
+    .plan-summary:empty {
+      display: none;
+    }
+
+    .plan-summary h3 {
+      font-size: 0.875em;
+      font-weight: 600;
+      margin: 0 0 0.5em 0;
+      color: var(--fg-accent-2);
+    }
+
+    .plan-summary ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5em;
+    }
+
+    .plan-summary li {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4em;
+      padding: 0.3em 0.6em;
+      border-radius: 4px;
+      font-size: 0.875em;
+    }
+
+    .plan-summary .serve-count {
+      font-weight: 600;
+      opacity: 0.8;
+    }
+
+    /* Edit modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg);
+      padding: 1.5em;
+      border-radius: 8px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal h3 {
+      margin: 0 0 1em 0;
+      font-size: 1.1em;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 0.5em;
+      justify-content: flex-end;
+      margin-top: 1em;
+    }
+
+    /* Responsive styles */
+    @media screen and (max-width: 1000px) {
+      body {
+        line-height: 1.7;
+      }
+
+      h1 {
+        line-height: 1.4;
+        margin: 3rem 0;
+      }
+
+      h2 {
+        font-weight: 600;
+        font-size: 1.2em;
+      }
+
+      main {
+        display: block;
+        grid-template-rows: 85px 1fr;
+        grid-template-columns: 1fr !important;
+      }
+
+      article {
+        box-shadow: none;
+        border: none;
+        width: 100vw;
+        padding: 0em var(--narrow-padding);
+        padding-bottom: 7em;
+      }
+
+      nav {
+        display: flex;
+        margin: 0;
+      }
+
+      nav a,
+      nav a:visited {
+        color: var(--fg-accent-1);
+      }
+
+      nav .navName {
+        background: none;
+        border: none;
+        padding-right: 1em;
+      }
+
+      nav .navName .home-icon {
+        display: block;
+        margin: -0.3em 0;
+        padding: 0;
+        font-size: 26px;
+      }
+
+      nav .name-mix {
+        display: none;
+      }
+
+      nav button {
+        position: initial;
+        margin-left: auto;
+        margin-right: 20px;
+        margin-bottom: 20px;
+      }
+
+      .sidebar {
+        padding: 2em var(--narrow-padding);
+        position: inherit;
+        height: fit-content;
+      }
+
+      .sidebar h1 {
+        margin-bottom: 0;
+      }
+
+      .sidebar nav {
+        padding: 0;
+      }
+
+      .narrow-remove {
+        display: none;
+      }
+
+      .week-grid {
+        gap: 3px;
+      }
+
+      .week-grid .header {
+        padding: 0.25em;
+        font-size: 0.8em;
+      }
+
+      .week-grid .row-label {
+        font-size: 0.8em;
+      }
+
+      .meal-cell-content {
+        font-size: 0.7em;
+        min-height: 45px;
+        padding: 0.3em;
+      }
+    }
+
+    @media screen and (max-width: 600px) {
+      .week-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+
+      .week-grid .header {
+        display: none;
+      }
+
+      .week-grid .row-label {
+        display: none;
+      }
+
+      .meal-cell::before {
+        content: attr(data-label);
+        position: absolute;
+        top: 4px;
+        left: 6px;
+        font-size: 0.65em;
+        font-weight: 600;
+        color: inherit;
+        opacity: 0.7;
+        z-index: 1;
+      }
+
+      .meal-cell-content {
+        padding-top: 1.5em;
+        min-height: 60px;
+        font-size: 0.8em;
+      }
+    }
+
+    @media screen and (max-width: 470px) {
+      body {
+        font-size: 16px;
+      }
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <main id="main" role="main">
+
+    <div class="sidebar">
+      <nav role="navigation">
+
+        <a class="navName" href="https://ben.report">
+          <span class="home-icon">🏠</span>
+          <div class="name-mix">
+            <span>ben.</span>
+            <span id="hover">porter</span>
+            <span id="normal">report</span>
+          </div>
+        </a>
+
+        <ul class="nav-main">
+          <li>
+            <a href="/index.html">Tools</a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar_titles">
+        <h1 style="margin-bottom: 0.5em;">Recipe Tracker</h1>
+        <a href="https://tools.ben.report">
+          <button class="btn btn-secondary">Return to Tools</button>
+        </a>
+      </div>
+    </div>
+
+    <article>
+      <p>
+        Plan your meals for the week. Add meals to your database, then assign them to lunch and dinner slots for each day.
+      </p>
+
+      <h2>Weekly Meal Plan</h2>
+      <div class="week-grid" id="weekGrid"></div>
+
+      <div class="plan-summary" id="planSummary"></div>
+
+      <div class="export-import">
+        <button class="btn btn-secondary" onclick="exportPlan()">Export Plan</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('importPlan').click()">Import Plan</button>
+        <input type="file" id="importPlan" accept=".json" onchange="importPlan(event)">
+        <button class="btn btn-secondary" onclick="clearPlan()">Clear Plan</button>
+      </div>
+
+      <h2>Meal Database</h2>
+      <div class="meal-database">
+        <div class="meal-form" id="mealForm">
+          <div class="meal-form-row">
+            <input type="text" id="mealName" placeholder="Meal name">
+            <select id="mealProtein">
+              <option value="">No protein</option>
+              <option value="chicken">Chicken</option>
+              <option value="beef">Beef</option>
+              <option value="pork">Pork</option>
+              <option value="fish">Fish</option>
+              <option value="tofu">Tofu</option>
+              <option value="eggs">Eggs</option>
+              <option value="beans">Beans</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <textarea id="mealIngredients" placeholder="Ingredients (comma-separated)"></textarea>
+          <div class="meal-form-row">
+            <button class="btn" onclick="addMeal()">Add Meal</button>
+          </div>
+        </div>
+
+        <ul class="meal-list" id="mealList"></ul>
+
+        <div class="export-import">
+          <button class="btn btn-secondary" onclick="exportMeals()">Export Meals</button>
+          <button class="btn btn-secondary" onclick="document.getElementById('importMeals').click()">Import Meals</button>
+          <input type="file" id="importMeals" accept=".json" onchange="importMeals(event)">
+        </div>
+      </div>
+
+    </article>
+  </main>
+
+  <!-- Edit Modal -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <h3>Edit Meal</h3>
+      <div class="meal-form">
+        <input type="hidden" id="editMealId">
+        <div class="meal-form-row">
+          <input type="text" id="editMealName" placeholder="Meal name">
+          <select id="editMealProtein">
+            <option value="">No protein</option>
+            <option value="chicken">Chicken</option>
+            <option value="beef">Beef</option>
+            <option value="pork">Pork</option>
+            <option value="fish">Fish</option>
+            <option value="tofu">Tofu</option>
+            <option value="eggs">Eggs</option>
+            <option value="beans">Beans</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <textarea id="editMealIngredients" placeholder="Ingredients (comma-separated)"></textarea>
+        <div class="modal-buttons">
+          <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+          <button class="btn" onclick="saveEditMeal()">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer" role="contentinfo">
+    <p>
+      © <a href="https://github.com/penborter/ben-report" target="_blank" rel="noopener noreferrer">Ben Porter</a> —
+      organic, farm-to-table code since 2020.
+      <button class="btn-toggle">
+        <svg class="dark-icon" width="20" height="20">
+          <rect x="1" y="1" width="8" height="8" fill="var(--fg-accent-1)" rx="1" ry="1"></rect>
+          <rect x="11" y="1" width="8" height="8" fill="var(--fg-accent-1)" rx="1" ry="1"></rect>
+          <rect x="1" y="11" width="8" height="8" fill="var(--fg-accent-1)" rx="1" ry="1"></rect>
+        </svg>
+        <svg class="light-icon" width="20" height="20">
+          <rect x="11" y="1" width="8" height="8" fill="var(--fg-accent-1)" rx="1" ry="1"></rect>
+          <rect x="1" y="11" width="8" height="8" fill="var(--fg-accent-1)" rx="1" ry="1"></rect>
+          <rect x="11" y="11" width="8" height="8" fill="var(--fg-accent-1)" rx="1" ry="1"></rect>
+        </svg>
+      </button>
+    </p>
+  </footer>
+
+  <script type="text/javascript">
+    // Theme toggle
+    const toggleSwitch = document.querySelector('.btn-toggle');
+    const currentTheme = localStorage.getItem('theme');
+
+    if (currentTheme) {
+      document.documentElement.setAttribute('data-theme', currentTheme);
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('theme', 'light');
+    }
+
+    function switchTheme(e) {
+      if (document.documentElement.getAttribute('data-theme') == 'light') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      }
+    }
+
+    toggleSwitch.addEventListener('click', switchTheme);
+
+    // Recipe Tracker Logic
+    const MEALS_KEY = 'recipeTracker_meals';
+    const PLAN_KEY = 'recipeTracker_plan';
+
+    const DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const MEAL_TYPES = ['lunch', 'dinner'];
+    const MEAL_TYPE_LABELS = ['Lunch', 'Dinner'];
+
+    // Soft pastel colors for meal highlighting
+    const MEAL_COLORS = [
+      { bg: '#e8f5e9', fg: '#2e7d32' },
+      { bg: '#e3f2fd', fg: '#1565c0' },
+      { bg: '#fff3e0', fg: '#e65100' },
+      { bg: '#f3e5f5', fg: '#7b1fa2' },
+      { bg: '#e0f2f1', fg: '#00695c' },
+      { bg: '#fce4ec', fg: '#c2185b' },
+      { bg: '#fffde7', fg: '#f9a825' },
+      { bg: '#e8eaf6', fg: '#3949ab' },
+      { bg: '#efebe9', fg: '#5d4037' },
+      { bg: '#e0f7fa', fg: '#00838f' },
+    ];
+
+    let meals = JSON.parse(localStorage.getItem(MEALS_KEY)) || [];
+    let plan = JSON.parse(localStorage.getItem(PLAN_KEY)) || {};
+
+    function saveMeals() {
+      localStorage.setItem(MEALS_KEY, JSON.stringify(meals));
+    }
+
+    function savePlan() {
+      localStorage.setItem(PLAN_KEY, JSON.stringify(plan));
+    }
+
+    function getMealColor(mealId) {
+      if (!mealId) return null;
+      // Get unique meal IDs in the plan
+      const uniqueMealIds = [...new Set(Object.values(plan))];
+      const index = uniqueMealIds.indexOf(mealId);
+      if (index === -1) return MEAL_COLORS[0];
+      return MEAL_COLORS[index % MEAL_COLORS.length];
+    }
+
+    function getMealById(id) {
+      return meals.find(m => m.id === id);
+    }
+
+    function buildWeekGrid() {
+      const grid = document.getElementById('weekGrid');
+      grid.innerHTML = '';
+
+      // Header row
+      grid.innerHTML += '<div class="header"></div>';
+      DAY_LABELS.forEach(day => {
+        grid.innerHTML += `<div class="header">${day}</div>`;
+      });
+
+      // Meal rows
+      MEAL_TYPES.forEach((type, typeIndex) => {
+        grid.innerHTML += `<div class="row-label">${MEAL_TYPE_LABELS[typeIndex]}</div>`;
+
+        DAYS.forEach((day, dayIndex) => {
+          const slot = `${day}-${type}`;
+          const label = `${DAY_LABELS[dayIndex]} ${MEAL_TYPE_LABELS[typeIndex]}`;
+          grid.innerHTML += `<div class="meal-cell" data-slot="${slot}" data-label="${label}"></div>`;
+        });
+      });
+
+      renderGrid();
+    }
+
+    function renderGrid() {
+      const cells = document.querySelectorAll('.meal-cell');
+      const sortedMeals = [...meals].sort((a, b) => a.name.localeCompare(b.name));
+
+      cells.forEach(cell => {
+        const slot = cell.dataset.slot;
+        const mealId = plan[slot];
+        const meal = getMealById(mealId);
+        const color = getMealColor(mealId);
+
+        let contentHtml = '';
+        let style = '';
+
+        if (meal && color) {
+          const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+          style = `background-color: ${color.bg}; color: ${color.fg};`;
+          contentHtml = `<div class="meal-cell-content filled" style="${style}">${escapeHtml(meal.name)}</div>`;
+        } else {
+          contentHtml = `<div class="meal-cell-content empty">+</div>`;
+        }
+
+        // Build select options
+        let optionsHtml = '<option value="">— None —</option>';
+        sortedMeals.forEach(m => {
+          const selected = m.id === mealId ? 'selected' : '';
+          const label = m.name + (m.protein ? ` (${m.protein})` : '');
+          optionsHtml += `<option value="${m.id}" ${selected}>${escapeHtml(label)}</option>`;
+        });
+
+        cell.innerHTML = `
+          ${contentHtml}
+          <select data-slot="${slot}" onchange="handleSlotChange(this)">${optionsHtml}</select>
+        `;
+      });
+    }
+
+    function handleSlotChange(select) {
+      const slot = select.dataset.slot;
+      if (select.value) {
+        plan[slot] = select.value;
+      } else {
+        delete plan[slot];
+      }
+      savePlan();
+      renderGrid();
+      renderPlanSummary();
+    }
+
+    function renderPlanSummary() {
+      const summary = document.getElementById('planSummary');
+      const mealCounts = {};
+
+      // Count occurrences of each meal
+      Object.values(plan).forEach(mealId => {
+        if (mealId) {
+          mealCounts[mealId] = (mealCounts[mealId] || 0) + 1;
+        }
+      });
+
+      const mealIds = Object.keys(mealCounts);
+      if (mealIds.length === 0) {
+        summary.innerHTML = '';
+        return;
+      }
+
+      // Sort by meal name
+      mealIds.sort((a, b) => {
+        const mealA = getMealById(a);
+        const mealB = getMealById(b);
+        return (mealA?.name || '').localeCompare(mealB?.name || '');
+      });
+
+      let html = '<h3>Serves this week</h3><ul>';
+      mealIds.forEach(mealId => {
+        const meal = getMealById(mealId);
+        if (!meal) return;
+        const count = mealCounts[mealId];
+        const color = getMealColor(mealId);
+        const style = color ? `background-color: ${color.bg}; color: ${color.fg};` : '';
+        html += `<li style="${style}"><span>${escapeHtml(meal.name)}</span><span class="serve-count">×${count}</span></li>`;
+      });
+      html += '</ul>';
+
+      summary.innerHTML = html;
+    }
+
+    function renderMealList() {
+      const list = document.getElementById('mealList');
+      list.innerHTML = '';
+
+      const sortedMeals = [...meals].sort((a, b) => a.name.localeCompare(b.name));
+
+      sortedMeals.forEach(meal => {
+        const li = document.createElement('li');
+        const ingredientsList = meal.ingredients ? meal.ingredients.join(', ') : '';
+
+        li.innerHTML = `
+          <div class="meal-info">
+            <div class="meal-header">
+              <span class="meal-name">${escapeHtml(meal.name)}</span>
+              ${meal.protein ? `<span class="protein-tag">${escapeHtml(meal.protein)}</span>` : ''}
+            </div>
+            ${ingredientsList ? `<div class="meal-ingredients">${escapeHtml(ingredientsList)}</div>` : ''}
+          </div>
+          <div class="meal-actions">
+            <button class="action-btn" onclick="openEditModal('${meal.id}')" title="Edit">Edit</button>
+            <button class="action-btn" onclick="deleteMeal('${meal.id}')" title="Delete">×</button>
+          </div>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    function addMeal() {
+      const nameInput = document.getElementById('mealName');
+      const proteinSelect = document.getElementById('mealProtein');
+      const ingredientsInput = document.getElementById('mealIngredients');
+
+      const name = nameInput.value.trim();
+      const protein = proteinSelect.value;
+      const ingredientsRaw = ingredientsInput.value.trim();
+      const ingredients = ingredientsRaw ? ingredientsRaw.split(',').map(i => i.trim()).filter(i => i) : [];
+
+      if (!name) {
+        alert('Please enter a meal name');
+        return;
+      }
+
+      const meal = {
+        id: Date.now().toString(),
+        name: name,
+        protein: protein,
+        ingredients: ingredients
+      };
+
+      meals.push(meal);
+      saveMeals();
+      renderMealList();
+      renderGrid();
+
+      nameInput.value = '';
+      proteinSelect.value = '';
+      ingredientsInput.value = '';
+      nameInput.focus();
+    }
+
+    function deleteMeal(id) {
+      if (!confirm('Delete this meal?')) return;
+
+      meals = meals.filter(m => m.id !== id);
+      saveMeals();
+
+      // Remove from plan if used
+      Object.keys(plan).forEach(slot => {
+        if (plan[slot] === id) {
+          delete plan[slot];
+        }
+      });
+      savePlan();
+
+      renderMealList();
+      renderGrid();
+      renderPlanSummary();
+    }
+
+    function openEditModal(id) {
+      const meal = getMealById(id);
+      if (!meal) return;
+
+      document.getElementById('editMealId').value = id;
+      document.getElementById('editMealName').value = meal.name;
+      document.getElementById('editMealProtein').value = meal.protein || '';
+      document.getElementById('editMealIngredients').value = (meal.ingredients || []).join(', ');
+
+      document.getElementById('editModal').classList.add('active');
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').classList.remove('active');
+    }
+
+    function saveEditMeal() {
+      const id = document.getElementById('editMealId').value;
+      const name = document.getElementById('editMealName').value.trim();
+      const protein = document.getElementById('editMealProtein').value;
+      const ingredientsRaw = document.getElementById('editMealIngredients').value.trim();
+      const ingredients = ingredientsRaw ? ingredientsRaw.split(',').map(i => i.trim()).filter(i => i) : [];
+
+      if (!name) {
+        alert('Please enter a meal name');
+        return;
+      }
+
+      const mealIndex = meals.findIndex(m => m.id === id);
+      if (mealIndex === -1) return;
+
+      meals[mealIndex] = {
+        ...meals[mealIndex],
+        name: name,
+        protein: protein,
+        ingredients: ingredients
+      };
+
+      saveMeals();
+      renderMealList();
+      renderGrid();
+      renderPlanSummary();
+      closeEditModal();
+    }
+
+    // Close modal on overlay click
+    document.getElementById('editModal').addEventListener('click', (e) => {
+      if (e.target.id === 'editModal') {
+        closeEditModal();
+      }
+    });
+
+    function exportPlan() {
+      const data = JSON.stringify(plan, null, 2);
+      downloadJson(data, 'meal-plan.json');
+    }
+
+    function importPlan(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          plan = imported;
+          savePlan();
+          renderGrid();
+          renderPlanSummary();
+        } catch (err) {
+          alert('Invalid JSON file');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function clearPlan() {
+      if (confirm('Clear all meals from the weekly plan?')) {
+        plan = {};
+        savePlan();
+        renderGrid();
+        renderPlanSummary();
+      }
+    }
+
+    function exportMeals() {
+      const data = JSON.stringify(meals, null, 2);
+      downloadJson(data, 'meals-database.json');
+    }
+
+    function importMeals(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            meals = imported;
+            saveMeals();
+            renderMealList();
+            renderGrid();
+            renderPlanSummary();
+          } else {
+            alert('Invalid meals format');
+          }
+        } catch (err) {
+          alert('Invalid JSON file');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function downloadJson(data, filename) {
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Allow Enter key to add meal (but not in textarea)
+    document.getElementById('mealName').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        addMeal();
+      }
+    });
+
+    // Initial render
+    buildWeekGrid();
+    renderMealList();
+    renderPlanSummary();
+  </script>
+
+</body>
+</html>
