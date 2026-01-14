@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chromecast Photo Prep</title>
+    <link rel="preconnect" href="https://rsms.me">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: hsl(70, 25%, 95%);
+            --fg: hsl(175, 25%, 22%);
+            --bg-accent-1: hsl(150, 15%, 60%);
+            --bg-accent-2: hsl(70, 15%, 97%);
+            --bg-accent-3: hsl(150, 15%, 80%);
+            --fg-accent-1: hsl(165, 25%, 45%);
+            --fg-accent-2: hsl(166, 15%, 32%);
+            --shadow-color: rgba(0, 0, 0, 0.05);
+            --shadow: 0 2px 4px var(--shadow-color), 0 4px 8px var(--shadow-color), 0 8px 16px var(--shadow-color);
+            --radius: 8px;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+            line-height: 1.5;
+            letter-spacing: -0.004em;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--fg);
+        }
+
+        .subtitle {
+            color: var(--bg-accent-1);
+            font-size: 1rem;
+        }
+
+        .config-panel {
+            background: var(--bg-accent-2);
+            border: 1px solid var(--bg-accent-3);
+            border-radius: var(--radius);
+            padding: 1.5em;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5em;
+            align-items: end;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5em;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--fg);
+        }
+
+        input, select {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 0.9rem;
+            padding: 0.7em 1em;
+            background: var(--bg);
+            border: 1px solid var(--bg-accent-3);
+            border-radius: 6px;
+            color: var(--fg);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--fg-accent-1);
+            box-shadow: 0 0 0 3px hsla(165, 25%, 45%, 0.15);
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23456'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
+        }
+
+        .dimensions-display {
+            font-size: 0.85rem;
+            color: var(--fg);
+            padding: 0.7em 1em;
+            background: var(--bg);
+            border: 1px solid var(--bg-accent-3);
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .dimensions-display span {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--bg-accent-1);
+            margin-top: 4px;
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--bg-accent-3);
+            border-radius: var(--radius);
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--bg-accent-2);
+            margin-bottom: 2rem;
+        }
+
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--fg-accent-1);
+            background: var(--bg);
+        }
+
+        .upload-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 1rem;
+            color: var(--bg-accent-1);
+        }
+
+        .upload-zone h3 {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--fg);
+        }
+
+        .upload-zone p {
+            color: var(--bg-accent-1);
+            font-size: 0.9rem;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .photos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .photo-card {
+            background: var(--fg-accent-2);
+            color: var(--bg);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 2px 2px var(--shadow-color), 0 4px 4px var(--shadow-color);
+            animation: fadeIn 0.3s ease;
+            transition: transform 0.2s ease;
+        }
+
+        .photo-card:hover {
+            transform: scale(1.02);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .photo-preview {
+            position: relative;
+            aspect-ratio: 16/9;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .photo-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .photo-preview canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .photo-info {
+            padding: 1em;
+        }
+
+        .photo-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--bg);
+        }
+
+        .photo-meta {
+            display: flex;
+            gap: 1em;
+            font-size: 0.75rem;
+            color: var(--bg-accent-3);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .photo-meta .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0.3em 0.7em;
+            border-radius: 20px;
+            background: var(--bg);
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .badge.portrait {
+            color: var(--fg);
+        }
+
+        .badge.landscape {
+            color: var(--fg-accent-1);
+        }
+
+        .photo-actions {
+            display: flex;
+            gap: 0.5em;
+            margin-top: 0.75em;
+        }
+
+        .btn {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 0.6em 1.2em;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--fg);
+            color: var(--bg);
+        }
+
+        .btn-primary:hover {
+            background: var(--fg-accent-1);
+        }
+
+        .btn-secondary {
+            background: var(--bg-accent-2);
+            color: var(--fg);
+            border: 1px solid var(--bg-accent-3);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg);
+            border-color: var(--fg-accent-1);
+        }
+
+        .btn-small {
+            padding: 0.5em 0.8em;
+            font-size: 0.75rem;
+            flex: 1;
+        }
+
+        .btn-remove {
+            background: transparent;
+            color: var(--bg-accent-3);
+            border: 1px solid var(--bg-accent-3);
+        }
+
+        .btn-remove:hover {
+            background: hsla(0, 70%, 60%, 0.1);
+            border-color: var(--red, #f05d5e);
+            color: var(--bg);
+        }
+
+        .actions-bar {
+            display: flex;
+            gap: 1em;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--bg-accent-1);
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            opacity: 0.4;
+            color: var(--bg-accent-1);
+        }
+
+        .info-box {
+            background: var(--bg-accent-2);
+            border: 1px solid var(--bg-accent-3);
+            padding: 1.5em;
+            margin: 1em 0 2rem 0;
+            font-size: 0.9em;
+            box-shadow: var(--shadow);
+            border-radius: var(--radius);
+            line-height: 1.7;
+        }
+
+        .info-box p {
+            margin: 0;
+        }
+
+        .info-box strong {
+            color: var(--fg);
+            font-weight: 600;
+        }
+
+        .progress-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: hsla(175, 25%, 22%, 0.95);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 1.5em;
+        }
+
+        .progress-overlay.active {
+            display: flex;
+        }
+
+        .progress-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--bg);
+        }
+
+        .progress-bar {
+            width: 280px;
+            height: 6px;
+            background: var(--fg-accent-2);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--bg);
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Chromecast Photo Prep</h1>
+            <p class="subtitle">Add letterboxing to photos for perfect Chromecast Ambient Mode display</p>
+        </header>
+
+        <div class="info-box">
+            <p><strong>How it works:</strong> Chromecast's Ambient Mode displays photos at your TV's exact aspect ratio. 
+            Portrait photos shown side-by-side each need to be slightly less than half the TV width. 
+            This tool adds black bars so your photos display in full without cropping.</p>
+        </div>
+
+        <div class="config-panel">
+            <div class="config-grid">
+                <div class="field">
+                    <label>TV Preset</label>
+                    <select id="preset-select">
+                        <option value="16:9">16:9 (Standard HD/4K)</option>
+                        <option value="21:9">21:9 (Ultrawide)</option>
+                        <option value="4:3">4:3 (Classic)</option>
+                        <option value="custom">Custom...</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>TV Width</label>
+                    <input type="number" id="tv-width" value="1920" min="100">
+                </div>
+                <div class="field">
+                    <label>TV Height</label>
+                    <input type="number" id="tv-height" value="1080" min="100">
+                </div>
+                <div class="field">
+                    <label>Target Dimensions</label>
+                    <div class="dimensions-display">
+                        <div id="landscape-dims">Landscape: 1920 × 1080</div>
+                        <span id="portrait-dims">Portrait (side-by-side): 959 × 1080</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="upload-zone" id="upload-zone">
+            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <h3>Drop photos here</h3>
+            <p>or click to browse • JPG, PNG, WebP supported</p>
+            <input type="file" id="file-input" multiple accept="image/*">
+        </div>
+
+        <div id="photos-container">
+            <div class="empty-state" id="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <path d="M21 15l-5-5L5 21"/>
+                </svg>
+                <p>No photos added yet</p>
+            </div>
+            <div class="photos-grid" id="photos-grid"></div>
+        </div>
+
+        <div class="actions-bar" id="actions-bar" style="display: none;">
+            <button class="btn btn-primary" id="download-all">Download All Processed</button>
+            <button class="btn btn-secondary" id="clear-all">Clear All</button>
+        </div>
+    </div>
+
+    <div class="progress-overlay" id="progress-overlay">
+        <div class="progress-text" id="progress-text">Processing photos...</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+    </div>
+
+    <script>
+        const state = {
+            photos: [],
+            tvWidth: 1920,
+            tvHeight: 1080
+        };
+
+        // DOM Elements
+        const presetSelect = document.getElementById('preset-select');
+        const tvWidthInput = document.getElementById('tv-width');
+        const tvHeightInput = document.getElementById('tv-height');
+        const landscapeDims = document.getElementById('landscape-dims');
+        const portraitDims = document.getElementById('portrait-dims');
+        const uploadZone = document.getElementById('upload-zone');
+        const fileInput = document.getElementById('file-input');
+        const photosGrid = document.getElementById('photos-grid');
+        const emptyState = document.getElementById('empty-state');
+        const actionsBar = document.getElementById('actions-bar');
+        const downloadAllBtn = document.getElementById('download-all');
+        const clearAllBtn = document.getElementById('clear-all');
+        const progressOverlay = document.getElementById('progress-overlay');
+        const progressText = document.getElementById('progress-text');
+        const progressFill = document.getElementById('progress-fill');
+
+        // Calculate target dimensions
+        function getTargetDimensions() {
+            const landscape = {
+                width: state.tvWidth,
+                height: state.tvHeight
+            };
+            
+            // Portrait photos shown side-by-side need to be slightly less than half width
+            // Using Math.floor and subtracting 1 to ensure they're definitely less than half
+            const portrait = {
+                width: Math.floor(state.tvWidth / 2) - 1,
+                height: state.tvHeight
+            };
+            
+            return { landscape, portrait };
+        }
+
+        function updateDimensionsDisplay() {
+            const dims = getTargetDimensions();
+            landscapeDims.textContent = `Landscape: ${dims.landscape.width} × ${dims.landscape.height}`;
+            portraitDims.textContent = `Portrait (side-by-side): ${dims.portrait.width} × ${dims.portrait.height}`;
+            
+            // Reprocess all photos with new dimensions
+            state.photos.forEach(photo => {
+                processPhoto(photo);
+            });
+        }
+
+        // Preset handling
+        presetSelect.addEventListener('change', () => {
+            const value = presetSelect.value;
+            if (value === 'custom') return;
+            
+            const [w, h] = value.split(':').map(Number);
+            // Calculate dimensions based on aspect ratio, keeping width at 1920
+            state.tvWidth = 1920;
+            state.tvHeight = Math.round(1920 * h / w);
+            
+            tvWidthInput.value = state.tvWidth;
+            tvHeightInput.value = state.tvHeight;
+            updateDimensionsDisplay();
+        });
+
+        tvWidthInput.addEventListener('change', () => {
+            state.tvWidth = parseInt(tvWidthInput.value) || 1920;
+            presetSelect.value = 'custom';
+            updateDimensionsDisplay();
+        });
+
+        tvHeightInput.addEventListener('change', () => {
+            state.tvHeight = parseInt(tvHeightInput.value) || 1080;
+            presetSelect.value = 'custom';
+            updateDimensionsDisplay();
+        });
+
+        // File upload handling
+        uploadZone.addEventListener('click', () => fileInput.click());
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', () => {
+            handleFiles(fileInput.files);
+            fileInput.value = '';
+        });
+
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                if (!file.type.startsWith('image/')) return;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const photo = {
+                            id: Date.now() + Math.random(),
+                            name: file.name,
+                            originalWidth: img.width,
+                            originalHeight: img.height,
+                            isPortrait: img.height > img.width,
+                            image: img,
+                            canvas: null
+                        };
+                        
+                        state.photos.push(photo);
+                        processPhoto(photo);
+                        renderPhotos();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function processPhoto(photo) {
+            const dims = getTargetDimensions();
+            const target = photo.isPortrait ? dims.portrait : dims.landscape;
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = target.width;
+            canvas.height = target.height;
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Fill with black
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Calculate scaling to fit image within target while maintaining aspect ratio
+            const imgAspect = photo.originalWidth / photo.originalHeight;
+            const targetAspect = target.width / target.height;
+            
+            let drawWidth, drawHeight;
+            
+            if (imgAspect > targetAspect) {
+                // Image is wider - fit to width
+                drawWidth = target.width;
+                drawHeight = target.width / imgAspect;
+            } else {
+                // Image is taller - fit to height
+                drawHeight = target.height;
+                drawWidth = target.height * imgAspect;
+            }
+            
+            // Center the image
+            const x = (target.width - drawWidth) / 2;
+            const y = (target.height - drawHeight) / 2;
+            
+            ctx.drawImage(photo.image, x, y, drawWidth, drawHeight);
+            
+            photo.canvas = canvas;
+            photo.processedWidth = target.width;
+            photo.processedHeight = target.height;
+        }
+
+        function renderPhotos() {
+            if (state.photos.length === 0) {
+                emptyState.style.display = 'block';
+                photosGrid.innerHTML = '';
+                actionsBar.style.display = 'none';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            actionsBar.style.display = 'flex';
+            
+            photosGrid.innerHTML = state.photos.map(photo => `
+                <div class="photo-card" data-id="${photo.id}">
+                    <div class="photo-preview" id="preview-${photo.id}"></div>
+                    <div class="photo-info">
+                        <div class="photo-name">${photo.name}</div>
+                        <div class="photo-meta">
+                            <span class="badge ${photo.isPortrait ? 'portrait' : 'landscape'}">
+                                ${photo.isPortrait ? 'Portrait' : 'Landscape'}
+                            </span>
+                            <span>${photo.originalWidth}×${photo.originalHeight} → ${photo.processedWidth}×${photo.processedHeight}</span>
+                        </div>
+                        <div class="photo-actions">
+                            <button class="btn btn-small btn-primary" onclick="downloadPhoto('${photo.id}')">Download</button>
+                            <button class="btn btn-small btn-remove" onclick="removePhoto('${photo.id}')">Remove</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Append canvases to previews
+            state.photos.forEach(photo => {
+                const preview = document.getElementById(`preview-${photo.id}`);
+                if (preview && photo.canvas) {
+                    preview.appendChild(photo.canvas.cloneNode(true));
+                    // Copy canvas content
+                    const displayCanvas = preview.querySelector('canvas');
+                    displayCanvas.getContext('2d').drawImage(photo.canvas, 0, 0);
+                }
+            });
+        }
+
+        function removePhoto(id) {
+            state.photos = state.photos.filter(p => p.id != id);
+            renderPhotos();
+        }
+
+        function downloadPhoto(id) {
+            const photo = state.photos.find(p => p.id == id);
+            if (!photo || !photo.canvas) return;
+            
+            const link = document.createElement('a');
+            const baseName = photo.name.replace(/\.[^/.]+$/, '');
+            link.download = `${baseName}_chromecast.jpg`;
+            link.href = photo.canvas.toDataURL('image/jpeg', 0.95);
+            link.click();
+        }
+
+        downloadAllBtn.addEventListener('click', async () => {
+            if (state.photos.length === 0) return;
+            
+            progressOverlay.classList.add('active');
+            progressFill.style.width = '0%';
+            
+            for (let i = 0; i < state.photos.length; i++) {
+                const photo = state.photos[i];
+                progressText.textContent = `Processing ${i + 1} of ${state.photos.length}...`;
+                progressFill.style.width = `${((i + 1) / state.photos.length) * 100}%`;
+                
+                await new Promise(resolve => setTimeout(resolve, 100));
+                downloadPhoto(photo.id);
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+            
+            progressText.textContent = 'Complete!';
+            await new Promise(resolve => setTimeout(resolve, 500));
+            progressOverlay.classList.remove('active');
+        });
+
+        clearAllBtn.addEventListener('click', () => {
+            state.photos = [];
+            renderPhotos();
+        });
+
+        // Make functions available globally
+        window.downloadPhoto = downloadPhoto;
+        window.removePhoto = removePhoto;
+
+        // Initialize
+        updateDimensionsDisplay();
+    </script>
+</body>
+</html>
