@@ -25,13 +25,8 @@
 
     p,
     h1,
-    h2 {
+    h3 {
       overflow-wrap: break-word;
-    }
-
-    h1,
-    h2 {
-      font-weight: 600;
     }
 
     h1 {
@@ -40,11 +35,9 @@
       font-weight: 500;
     }
 
-    h2 {
-      margin: 2rem 0 1rem 0;
+    h3 {
+      font-weight: 600;
       font-size: 1.125em;
-      border-top: 1px solid var(--bg-accent-1);
-      padding-top: 0.3em;
     }
 
     p {
@@ -63,7 +56,7 @@
       --fg-accent-2: #455e58;
       --bg-transparent: rgba(244, 245, 239, 0.85);
       --bg-accent-transparent: rgba(138, 168, 153, 0.3);
-      --shadow: 0 2px 4px var(--shadow-color), 0 4px 8px var(--shadow-color), 0 8px 16px var(--shadow-color);
+      --shadow: 0 2px 4px var(--shadow-color), 0 4px 8px var(--shadow-color);
       --shadow-color: rgba(0, 0, 0, 0.05);
       --navName-color: #3f6d56;
     }
@@ -112,7 +105,7 @@
       text-decoration-thickness: 1.5px;
     }
 
-    body a:not(nav a, .tag):hover {
+    body a:not(nav a):hover {
       text-decoration-color: var(--fg-accent-1);
       text-decoration-thickness: 2px;
     }
@@ -138,18 +131,6 @@
       margin-top: 0;
     }
 
-    article>ul {
-      padding-left: 1em;
-    }
-
-    article>ul li {
-      padding-left: 0.5em;
-    }
-
-    li::marker {
-      margin-left: -0.1em;
-    }
-
     /* Sidebar */
     .sidebar {
       position: sticky;
@@ -165,14 +146,6 @@
 
     .sidebar .sidebar_titles h1 {
       margin-bottom: 0;
-    }
-
-    .sidebar .sidebar_titles h2 {
-      margin: 0;
-      padding-top: 0;
-      font-size: 1em;
-      font-weight: 400;
-      border-top: 0;
     }
 
     /* Navigation */
@@ -199,10 +172,6 @@
 
     nav:hover svg * {
       fill: var(--navName-color);
-    }
-
-    nav:hover .active {
-      text-decoration-color: var(--fg);
     }
 
     nav ul li {
@@ -233,12 +202,6 @@
       text-decoration: underline;
       text-underline-offset: 4px;
       text-decoration-color: var(--fg-accent-1);
-    }
-
-    nav .active {
-      text-decoration: underline;
-      text-decoration-color: var(--bg-accent-1);
-      text-underline-offset: 4px;
     }
 
     nav .home-icon {
@@ -275,129 +238,6 @@
       display: inline-block;
     }
 
-    /* Post metadata */
-    .post-footer {
-      font-size: 14px;
-      padding-top: 0.5em;
-      color: var(--bg-accent-1);
-    }
-
-    .flexbox {
-      display: flex;
-      flex-wrap: wrap;
-      column-gap: 0.3em;
-      row-gap: 0.8em;
-    }
-
-    .flexbox li {
-      display: inline-block;
-    }
-
-    .tag {
-      text-decoration: none;
-      padding: 0.3em 0.7em;
-      border-radius: 20px;
-      background-color: var(--bg);
-      color: var(--bg-accent-1);
-      border: 1px solid var(--bg-accent-1);
-      transition: 0.1s ease;
-    }
-
-    .tag:hover {
-      color: var(--fg);
-      border: 1px solid var(--fg-accent-1);
-      box-shadow: 0 2px 2px var(--shadow-color), 0 4px 4px var(--shadow-color), 0 8px 8px var(--shadow-color);
-    }
-
-    /* Post navigation */
-    .post-nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1em;
-      margin: 0 -1em;
-    }
-
-    .post-nav * {
-      color: var(--fg-accent-2);
-    }
-
-    .post-nav-arrow {
-      width: 50%;
-    }
-
-    .post-nav-arrow p {
-      margin: 0;
-    }
-
-    .prev-page p {
-      padding-right: 0.5em;
-    }
-
-    .truncate {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-weight: 500;
-    }
-
-    /* Table of contents */
-    .toc {
-      margin-top: auto;
-      font-weight: 700;
-      font-size: 15px;
-      line-height: 1.7;
-    }
-
-    .toc:hover {
-      background: var(--bg-transparent);
-      backdrop-filter: blur(5px);
-    }
-
-    .toc:hover * {
-      color: var(--fg-accent-1) !important;
-    }
-
-    .toc * {
-      padding: 0;
-      margin: 0;
-      text-overflow: ellipsis;
-      color: transparent;
-      transition: 0.2s ease-in-out;
-    }
-
-    .toc .toc-return {
-      color: var(--bg-accent-1);
-    }
-
-    .toc li {
-      display: block;
-      margin-bottom: 0.3em;
-    }
-
-    .toc a {
-      text-decoration: none;
-    }
-
-    .toc a:hover {
-      color: var(--fg) !important;
-    }
-
-    .toc>ul {
-      margin-bottom: 1em;
-    }
-
-    .toc>ul ul {
-      font-weight: 400;
-      line-height: 1.2;
-      margin-top: 0.3em;
-      margin-bottom: 0.8em;
-    }
-
-    .narrow-remove {
-      display: block;
-    }
-
     /* Footer */
     footer {
       font-size: 14px;
@@ -417,6 +257,26 @@
     footer p {
       margin: 0 2em;
       grid-column: 2;
+    }
+
+    .summary-box {
+      display: block;
+      background: var(--bg-accent-2);
+      border: 1px solid var(--bg-accent-3);
+      font-size: 0.95em;
+      padding: 1em;
+      margin: 1.5em 0;
+      box-shadow: var(--shadow);
+      text-decoration: none;
+    }
+
+    .summary-box:hover {
+      box-shadow: 0 2px 4px var(--shadow-color), 0 4px 8px var(--shadow-color), 0 8px 16px var(--shadow-color);
+      transform: translateY(-1px);
+    }
+
+    .summary-box h3, p {
+      margin: 0;
     }
 
     /* Theme toggle button */
@@ -460,11 +320,6 @@
       h1 {
         line-height: 1.4;
         margin: 3rem 0;
-      }
-
-      h2 {
-        font-weight: 600;
-        font-size: 1.2em;
       }
 
       main {
@@ -521,29 +376,13 @@
         height: fit-content;
       }
 
-      .sidebar h1 {
-        margin-bottom: 0;
-      }
-
       .sidebar nav {
         padding: 0;
-      }
-
-      ul {
-        padding-left: 1.2em;
       }
 
       footer {
         margin: 0;
         display: block;
-      }
-
-      .post-nav {
-        font-size: 16px;
-      }
-
-      .narrow-remove {
-        display: none;
       }
     }
 
@@ -598,13 +437,22 @@
       <p>
         This is a collection of simple, low-stakes tools, modelled on a similar (but much more elaborate) page started by <a href="https://tools.simonwillison.net/">Simon Willison</a>.
       </p>
-      <h2>Tools List</h2>
-      <ul>
-        <li><a href="/playlist-covers.html">Playlists cover generator</a></li>
-        <li><a href="/recipes.html">Recipe tracker</a></li>
-        <li><a href="/chromecast-screensaver-crop.html">Chromecast screensaver crop tool</a></li>
-      </ul>
-
+      <a href="/playlist-covers.html" class="summary-box">
+        <h3>Playlist cover generator</h3>
+        <p>Create custom geometric playlist covers with rotatable pattern tiles</p>
+      </a>
+      <a href="/recipes.html" class="summary-box">
+        <h3>Recipe tracker</h3>
+        <p>Plan weekly meals with an interactive meal planning interface</p>
+      </a>
+      <a href="/chromecast-screensaver-crop.html" class="summary-box">
+        <h3>Chromecast screensaver crop tool</h3>
+        <p>Add letterboxing to photos for perfect Chromecast Ambient Mode display</p>
+      </a>
+      <a href="/epub-locs.html" class="summary-box">
+        <h3>EPUB LOC estimator</h3>
+        <p>Estimate Kindle Location numbers for EPUB files with chapter-by-chapter breakdown</p>
+      </a>
     </article>
   </main>
 
