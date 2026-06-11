@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JPEG → WebP</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  @import url('https://rsms.me/inter/inter.css');
+
+  :root {
+    --bg: hsl(70, 25%, 95%);
+    --fg: hsl(175, 25%, 22%);
+    --bg-accent-1: hsl(150, 15%, 60%);
+    --bg-accent-2: hsl(70, 15%, 97%);
+    --bg-accent-3: hsl(150, 15%, 80%);
+    --fg-accent-1: hsl(165, 25%, 45%);
+    --fg-accent-2: hsl(166, 15%, 32%);
+    --red: #f05d5e;
+    --shadow-color: rgba(0, 0, 0, 0.05);
+    --shadow: 0 2px 4px var(--shadow-color), 0 4px 8px var(--shadow-color), 0 8px 16px var(--shadow-color);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    letter-spacing: -0.004em;
+    background: var(--bg);
+    color: var(--fg);
+    margin: 0;
+    padding: 0 1em;
+  }
+
+  main {
+    max-width: 650px;
+    margin: 0 auto;
+    padding-top: 2.5rem;
+  }
+
+  h1 { font-size: 1.25rem; font-weight: 500; margin: 0 0 0.5rem 0; }
+  h2 {
+    font-size: 1.125em;
+    font-weight: 600;
+    border-top: 1px solid var(--bg-accent-3);
+    padding-top: 1rem;
+    margin: 2rem 0 1rem;
+  }
+  p { margin: 0.5rem 0 1.5rem 0; }
+  .muted { color: var(--bg-accent-1); }
+  code {
+    font-family: 'iA Duo', ui-monospace, monospace;
+    font-size: 0.9em;
+    font-weight: 600;
+  }
+
+  a {
+    color: var(--fg);
+    text-underline-offset: 3px;
+    text-decoration-color: var(--bg-accent-1);
+    text-decoration-thickness: 1.5px;
+  }
+  a:hover {
+    text-decoration-color: var(--fg-accent-1);
+    text-decoration-thickness: 2px;
+  }
+
+  /* Drop zone */
+  #dropzone {
+    border: 1.5px dashed var(--bg-accent-1);
+    background: var(--bg-accent-2);
+    box-shadow: var(--shadow);
+    padding: 3rem 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.2s ease;
+    margin: 1.5rem 0;
+  }
+  #dropzone:hover, #dropzone.dragover {
+    border-color: var(--fg-accent-1);
+    background: var(--bg);
+  }
+  #dropzone p { margin: 0; }
+  #dropzone .sub { font-size: 14px; color: var(--bg-accent-1); margin-top: 0.3em; }
+  input[type="file"] { display: none; }
+
+  /* Settings */
+  .settings {
+    background: var(--bg-accent-2);
+    border: 1px solid var(--bg-accent-3);
+    padding: 1.5em;
+    margin: 1em 0;
+    font-size: 0.9em;
+    box-shadow: var(--shadow);
+  }
+  .setting-row {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    margin-bottom: 1em;
+    flex-wrap: wrap;
+  }
+  .setting-row:last-child { margin-bottom: 0; }
+  .setting-label { min-width: 110px; font-weight: 600; }
+
+  .size-options { display: flex; gap: 0.5em; flex-wrap: wrap; }
+  .size-option {
+    padding: 0.3em 0.7em;
+    border-radius: 20px;
+    background: var(--bg);
+    color: var(--bg-accent-1);
+    border: 1px solid var(--bg-accent-1);
+    cursor: pointer;
+    user-select: none;
+    transition: 0.15s ease;
+    font-size: 1em;
+  }
+  .size-option:hover {
+    color: var(--fg);
+    border-color: var(--fg-accent-1);
+    box-shadow: var(--shadow);
+  }
+  .size-option.active {
+    background: var(--fg);
+    color: var(--bg);
+    border-color: var(--fg);
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    flex: 1;
+    min-width: 140px;
+    height: 3px;
+    background: var(--bg-accent-3);
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--fg);
+    cursor: pointer;
+    border-radius: 0;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--fg);
+    cursor: pointer;
+    border-radius: 0;
+    border: none;
+  }
+  #qualityVal {
+    font-family: 'iA Duo', ui-monospace, monospace;
+    font-weight: 600;
+    min-width: 2.5em;
+    text-align: right;
+  }
+
+  /* Buttons */
+  button {
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    background: var(--fg);
+    color: var(--bg);
+    border: 1px solid var(--fg);
+    padding: 0.5em 1.2em;
+    cursor: pointer;
+    transition: 0.2s ease;
+  }
+  button:hover:not(:disabled) {
+    background: var(--fg-accent-1);
+    border-color: var(--fg-accent-1);
+    box-shadow: var(--shadow);
+  }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.secondary {
+    background: var(--bg);
+    color: var(--fg);
+    border: 1px solid var(--bg-accent-1);
+    font-weight: 400;
+    font-size: 14px;
+  }
+  button.secondary:hover:not(:disabled) {
+    background: var(--bg);
+    color: var(--fg);
+    border-color: var(--fg-accent-1);
+  }
+  .actions { display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; margin: 1.5em 0; }
+
+  /* Results table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--fg);
+    font-size: 0.9em;
+    margin: 1em 0;
+  }
+  thead tr { background: var(--fg); color: var(--bg); }
+  th { text-align: left; padding: 0 0.75em; font-weight: 600; }
+  tbody tr { height: 35px; background: var(--bg-accent-2); }
+  tbody tr:nth-child(even) { background: var(--bg); }
+  tbody tr:hover { filter: brightness(103%); }
+  td { padding: 0.4em 0.75em; }
+  td.num {
+    font-family: 'iA Duo', ui-monospace, monospace;
+    font-size: 0.95em;
+    white-space: nowrap;
+  }
+  .savings { color: var(--fg-accent-1); font-weight: 600; }
+  .savings.negative { color: var(--red); }
+  td a { font-size: 0.95em; }
+  .filename {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #status { font-size: 14px; color: var(--bg-accent-1); }
+  #warning {
+    background: var(--bg-accent-2);
+    border: 1px solid var(--red);
+    padding: 1em 1.5em;
+    margin: 1em 0;
+    font-size: 0.9em;
+    display: none;
+  }
+
+  /* Snippet box */
+  pre {
+    background: var(--bg-accent-2);
+    border: 1px solid var(--bg-accent-3);
+    box-shadow: var(--shadow);
+    padding: 1.5em;
+    overflow-x: auto;
+    font-family: 'iA Duo', ui-monospace, monospace;
+    font-size: 0.8em;
+    font-weight: 400;
+    line-height: 1.6;
+    margin: 1em 0;
+  }
+
+  footer {
+    font-size: 14px;
+    color: var(--bg-accent-1);
+    padding: 2em 0;
+    margin-top: 3em;
+    border-top: 1px solid var(--bg-accent-1);
+  }
+  footer a { color: var(--bg-accent-1); margin-right: 1em; }
+
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>JPEG → WebP</h1>
+  <p class="muted">Batch-convert JPEGs to WebP for the photo gallery. Resizes to your chosen sizes (never enlarging), encodes entirely in the browser, and zips the results ready for upload to Cloudflare R2.</p>
+
+  <div id="warning">Your browser doesn't support WebP encoding via canvas. Use Chrome, Edge, or Firefox for this tool.</div>
+
+  <div id="dropzone">
+    <p><strong>Drop JPEGs here</strong> or click to select</p>
+    <p class="sub">Multiple files welcome — PNG works too</p>
+  </div>
+  <input type="file" id="fileInput" accept="image/jpeg,image/png" multiple>
+
+  <div class="settings">
+    <div class="setting-row">
+      <span class="setting-label">Output sizes</span>
+      <div class="size-options">
+        <span class="size-option" data-size="400">400px <span class="muted">thumb</span></span>
+        <span class="size-option" data-size="1200">1200px <span class="muted">medium</span></span>
+        <span class="size-option active" data-size="2400">2400px <span class="muted">full</span></span>
+      </div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Quality</span>
+      <input type="range" id="quality" min="50" max="100" value="85">
+      <span id="qualityVal">85</span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button id="convertBtn" disabled>Convert</button>
+    <button id="zipBtn" class="secondary hidden">Download all (.zip)</button>
+    <button id="clearBtn" class="secondary hidden">Clear</button>
+    <span id="status"></span>
+  </div>
+
+  <div id="results" class="hidden">
+    <h2>Results</h2>
+    <table>
+      <thead>
+        <tr><th>File</th><th>Size</th><th>Original</th><th>WebP</th><th>Saved</th><th></th></tr>
+      </thead>
+      <tbody id="resultsBody"></tbody>
+    </table>
+    <p id="totals" class="muted"></p>
+  </div>
+
+  <div id="snippetSection" class="hidden">
+    <h2>srcset snippet</h2>
+    <p class="muted">For responsive loading once the files are up on R2 — adjust the base URL.</p>
+    <pre id="snippet"></pre>
+  </div>
+
+  <footer>
+    <a href="https://tools.ben.report">Home</a>
+    <a href="https://github.com/penborter/tools/blob/main/jpeg-to-webp.html">View Source</a>
+  </footer>
+</main>
+
+<script>
+(function () {
+  const SUFFIXES = { 400: '-thumb', 1200: '-med', 2400: '' };
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const convertBtn = document.getElementById('convertBtn');
+  const zipBtn = document.getElementById('zipBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const qualitySlider = document.getElementById('quality');
+  const qualityVal = document.getElementById('qualityVal');
+  const statusEl = document.getElementById('status');
+  const resultsDiv = document.getElementById('results');
+  const resultsBody = document.getElementById('resultsBody');
+  const totalsEl = document.getElementById('totals');
+  const snippetSection = document.getElementById('snippetSection');
+  const snippetEl = document.getElementById('snippet');
+  const warningEl = document.getElementById('warning');
+
+  let queue = [];       // File objects waiting to convert
+  let outputs = [];     // { name, blob, originalName, originalSize, size, width, height }
+  let objectUrls = [];
+
+  // --- WebP support check ---
+  const testCanvas = document.createElement('canvas');
+  testCanvas.width = testCanvas.height = 1;
+  const webpSupported = testCanvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+  if (!webpSupported) {
+    warningEl.style.display = 'block';
+    convertBtn.disabled = true;
+  }
+
+  // --- UI wiring ---
+  qualitySlider.addEventListener('input', () => qualityVal.textContent = qualitySlider.value);
+
+  document.querySelectorAll('.size-option').forEach(el => {
+    el.addEventListener('click', () => {
+      el.classList.toggle('active');
+      // Don't allow zero sizes selected
+      if (!document.querySelector('.size-option.active')) el.classList.add('active');
+    });
+  });
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => addFiles(fileInput.files));
+
+  ['dragenter', 'dragover'].forEach(evt =>
+    dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.add('dragover'); }));
+  ['dragleave', 'drop'].forEach(evt =>
+    dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.remove('dragover'); }));
+  dropzone.addEventListener('drop', e => addFiles(e.dataTransfer.files));
+
+  function addFiles(fileList) {
+    const accepted = Array.from(fileList).filter(f => /image\/(jpeg|png)/.test(f.type));
+    queue = queue.concat(accepted);
+    if (queue.length) {
+      convertBtn.disabled = !webpSupported;
+      statusEl.textContent = queue.length + ' file' + (queue.length === 1 ? '' : 's') + ' queued';
+    }
+    fileInput.value = '';
+  }
+
+  function activeSizes() {
+    return Array.from(document.querySelectorAll('.size-option.active'))
+      .map(el => parseInt(el.dataset.size, 10))
+      .sort((a, b) => a - b);
+  }
+
+  function fmtBytes(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1048576) return (b / 1024).toFixed(0) + ' KB';
+    return (b / 1048576).toFixed(2) + ' MB';
+  }
+
+  function baseName(filename) {
+    return filename.replace(/\.[^.]+$/, '');
+  }
+
+  function loadImage(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read ' + file.name)); };
+      img.src = url;
+    });
+  }
+
+  // Step-down resize for better quality on large reductions
+  function resizeToCanvas(img, maxDim) {
+    let w = img.naturalWidth, h = img.naturalHeight;
+    // fit inside maxDim x maxDim, without enlargement
+    if (w > maxDim || h > maxDim) {
+      const ratio = Math.min(maxDim / w, maxDim / h);
+      w = Math.round(w * ratio);
+      h = Math.round(h * ratio);
+    }
+    let source = img;
+    let sw = img.naturalWidth, sh = img.naturalHeight;
+    // halve repeatedly until within 2x of target, then final pass
+    while (sw / 2 >= w && sh / 2 >= h) {
+      const c = document.createElement('canvas');
+      sw = Math.round(sw / 2); sh = Math.round(sh / 2);
+      c.width = sw; c.height = sh;
+      const cx = c.getContext('2d');
+      cx.imageSmoothingEnabled = true;
+      cx.imageSmoothingQuality = 'high';
+      cx.drawImage(source, 0, 0, sw, sh);
+      source = c;
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(source, 0, 0, w, h);
+    return canvas;
+  }
+
+  function canvasToWebP(canvas, quality) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Encoding failed')), 'image/webp', quality / 100);
+    });
+  }
+
+  convertBtn.addEventListener('click', async () => {
+    if (!queue.length) return;
+    const sizes = activeSizes();
+    const quality = parseInt(qualitySlider.value, 10);
+    convertBtn.disabled = true;
+
+    const files = queue;
+    queue = [];
+    let done = 0;
+
+    for (const file of files) {
+      statusEl.textContent = 'Converting ' + (done + 1) + ' of ' + files.length + '…';
+      try {
+        const img = await loadImage(file);
+        for (const size of sizes) {
+          const canvas = resizeToCanvas(img, size);
+          const blob = await canvasToWebP(canvas, quality);
+          const name = baseName(file.name) + (SUFFIXES[size] !== undefined ? SUFFIXES[size] : '-' + size) + '.webp';
+          outputs.push({
+            name, blob,
+            originalName: file.name,
+            originalSize: file.size,
+            size: blob.size,
+            width: canvas.width,
+            height: canvas.height,
+            dim: size
+          });
+          addRow(outputs[outputs.length - 1]);
+        }
+      } catch (err) {
+        statusEl.textContent = 'Error: ' + err.message;
+      }
+      done++;
+    }
+
+    statusEl.textContent = 'Done — ' + outputs.length + ' file' + (outputs.length === 1 ? '' : 's') + ' ready';
+    convertBtn.disabled = true;
+    resultsDiv.classList.remove('hidden');
+    zipBtn.classList.remove('hidden');
+    clearBtn.classList.remove('hidden');
+    updateTotals();
+    updateSnippet(files, sizes);
+  });
+
+  function addRow(out) {
+    const tr = document.createElement('tr');
+    const saved = 1 - out.size / out.originalSize;
+    const savedClass = saved < 0 ? 'savings negative' : 'savings';
+    const url = URL.createObjectURL(out.blob);
+    objectUrls.push(url);
+    tr.innerHTML =
+      '<td class="filename" title="' + out.name + '">' + out.name + '</td>' +
+      '<td class="num">' + out.width + '×' + out.height + '</td>' +
+      '<td class="num">' + fmtBytes(out.originalSize) + '</td>' +
+      '<td class="num">' + fmtBytes(out.size) + '</td>' +
+      '<td class="num ' + savedClass + '">' + (saved >= 0 ? '−' : '+') + Math.abs(Math.round(saved * 100)) + '%</td>' +
+      '<td><a href="' + url + '" download="' + out.name + '">download</a></td>';
+    resultsBody.appendChild(tr);
+  }
+
+  function updateTotals() {
+    // Sum originals once per source file (full-size row), webp across all outputs
+    const seen = new Set();
+    let origTotal = 0;
+    outputs.forEach(o => {
+      if (!seen.has(o.originalName)) { origTotal += o.originalSize; seen.add(o.originalName); }
+    });
+    const webpTotal = outputs.reduce((s, o) => s + o.size, 0);
+    totalsEl.textContent = 'Originals: ' + fmtBytes(origTotal) + ' → WebP (all sizes): ' + fmtBytes(webpTotal);
+  }
+
+  function updateSnippet(files, sizes) {
+    if (!files.length) return;
+    const example = baseName(files[0].name);
+    const srcset = sizes.map(s => {
+      const suffix = SUFFIXES[s] !== undefined ? SUFFIXES[s] : '-' + s;
+      return 'https://images.ben.report/' + example + suffix + '.webp ' + s + 'w';
+    }).join(',\n          ');
+    snippetEl.textContent =
+      '<img\n  srcset="' + srcset + '"\n  sizes="(max-width: 768px) 100vw, 650px"\n  src="https://images.ben.report/' + example + (SUFFIXES[sizes[sizes.length - 1]] !== undefined ? SUFFIXES[sizes[sizes.length - 1]] : '-' + sizes[sizes.length - 1]) + '.webp"\n  loading="lazy"\n  width="W" height="H"\n  alt=""\n>';
+    snippetSection.classList.remove('hidden');
+  }
+
+  zipBtn.addEventListener('click', async () => {
+    zipBtn.disabled = true;
+    statusEl.textContent = 'Zipping…';
+    const zip = new JSZip();
+    outputs.forEach(o => zip.file(o.name, o.blob));
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'webp-export.zip';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    zipBtn.disabled = false;
+    statusEl.textContent = 'Zip downloaded';
+  });
+
+  clearBtn.addEventListener('click', () => {
+    outputs = [];
+    queue = [];
+    objectUrls.forEach(u => URL.revokeObjectURL(u));
+    objectUrls = [];
+    resultsBody.innerHTML = '';
+    resultsDiv.classList.add('hidden');
+    snippetSection.classList.add('hidden');
+    zipBtn.classList.add('hidden');
+    clearBtn.classList.add('hidden');
+    convertBtn.disabled = true;
+    statusEl.textContent = '';
+  });
+})();
+</script>
+</body>
+</html>

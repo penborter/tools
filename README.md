@@ -48,6 +48,17 @@ Estimate Amazon Kindle Location (LOC) numbers for EPUB files. Features:
 - Searchable LOC lookup to find specific locations
 - Export chapter breakdown as CSV
 
+### JPEG → WebP Converter
+**[https://tools.ben.report/jpeg-to-webp.html](https://tools.ben.report/jpeg-to-webp.html)**
+
+Batch-convert JPEGs (and PNGs) to WebP entirely in the browser. Features:
+- Drag-and-drop or select multiple images at once
+- Output multiple sizes per image (400px thumb, 1200px medium, 2400px full)
+- Quality-controlled, high-quality step-down resizing (never enlarges)
+- Per-file results table showing dimensions and size savings
+- Download all converted files as a single `.zip`
+- Generates a responsive `srcset` snippet for the converted images
+
 ## Getting Started
 
 Each tool is a standalone HTML file that can be opened directly in a web browser. No installation or build process required.
