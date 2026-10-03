@@ -60,6 +60,17 @@ Batch-convert JPEGs (and PNGs, or PDF scans) to WebP entirely in the browser. Fe
 - Download all converted files as a single `.zip`
 - Generates a responsive `srcset` snippet for the converted images
 
+### Swim FIT Editor
+**[https://tools.ben.report/swim-fit-editor.html](https://tools.ben.report/swim-fit-editor.html)**
+
+Correct pool swims recorded by a Garmin watch, then download a fixed `.fit` file. Features:
+- Horizontally scrollable column chart of every length (height = length time, colour = stroke), grouped by interval with rests marked
+- Change the stroke of one or many lengths (freestyle, breaststroke, backstroke, butterfly, drill)
+- Split a length into two equal lengths where the watch missed a turn
+- Merge neighbouring lengths where the watch counted a turn that didn't happen
+- Recalculates interval and activity totals (distance, length counts, pace, SWOLF, strokes per length)
+- Undo, reset, and a change log; all other data in the file is preserved byte-for-byte
+
 ## Getting Started
 
 Each tool is a standalone HTML file that can be opened directly in a web browser. No installation or build process required.
