@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Swim FIT Editor</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<style>
+  @import url('https://rsms.me/inter/inter.css');
+
+  :root {
+    --bg: hsl(70, 25%, 95%);
+    --fg: hsl(175, 25%, 22%);
+    --bg-accent-1: hsl(150, 15%, 60%);
+    --bg-accent-2: hsl(70, 15%, 97%);
+    --bg-accent-3: hsl(150, 15%, 80%);
+    --fg-accent-1: hsl(165, 25%, 45%);
+    --fg-accent-2: hsl(166, 15%, 32%);
+    --red: #f05d5e;
+    --shadow-color: rgba(0, 0, 0, 0.05);
+    --shadow: 0 2px 4px var(--shadow-color), 0 4px 8px var(--shadow-color), 0 8px 16px var(--shadow-color);
+
+    /* Stroke colours (validated for colour-vision deficiency against both surfaces) */
+    --s-free: #2a78d6;
+    --s-breast: #eb6834;
+    --s-back: #1baf7a;
+    --s-fly: #4a3aa7;
+    --s-drill: hsl(150, 10%, 55%);
+    --s-other: hsl(150, 8%, 65%);
+    --grid: hsl(150, 15%, 87%);
+  }
+
+  [data-theme="dark"] {
+    --bg: hsl(175, 25%, 22%);
+    --fg: hsl(70, 25%, 95%);
+    --bg-accent-1: hsl(165, 25%, 55%);
+    --bg-accent-2: hsl(166, 15%, 27%);
+    --bg-accent-3: hsl(166, 20%, 34%);
+    --fg-accent-1: hsl(150, 15%, 60%);
+    --fg-accent-2: hsl(70, 15%, 97%);
+    --shadow-color: rgba(0, 0, 0, 0.1);
+
+    --s-free: #2f7fe0;
+    --s-breast: #d95926;
+    --s-back: #199e70;
+    --s-fly: #b28cf0;
+    --s-drill: hsl(150, 10%, 60%);
+    --s-other: hsl(150, 8%, 50%);
+    --grid: hsl(170, 20%, 28%);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    letter-spacing: -0.004em;
+    background: var(--bg);
+    color: var(--fg);
+    margin: 0;
+    padding: 0 1em;
+  }
+
+  main {
+    max-width: 650px;
+    margin: 0 auto;
+    padding-top: 2.5rem;
+  }
+
+  /* Chart and editor break out of the text column */
+  .wide {
+    width: min(1000px, calc(100vw - 2em));
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  h1 { font-size: 1.25rem; font-weight: 500; margin: 0 0 0.5rem 0; }
+  h2 {
+    font-size: 1.125em;
+    font-weight: 600;
+    border-top: 1px solid var(--bg-accent-3);
+    padding-top: 1rem;
+    margin: 2rem 0 1rem;
+  }
+  p { margin: 0.5rem 0 1.5rem 0; }
+  .muted { color: var(--bg-accent-1); }
+  .num { font-variant-numeric: tabular-nums; }
+
+  a {
+    color: var(--fg);
+    text-underline-offset: 3px;
+    text-decoration-color: var(--bg-accent-1);
+    text-decoration-thickness: 1.5px;
+  }
+  a:hover {
+    text-decoration-color: var(--fg-accent-1);
+    text-decoration-thickness: 2px;
+  }
+
+  /* Drop zone */
+  #dropzone {
+    border: 1.5px dashed var(--bg-accent-1);
+    background: var(--bg-accent-2);
+    box-shadow: var(--shadow);
+    padding: 3rem 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.2s ease;
+    margin: 1.5rem 0;
+  }
+  #dropzone:hover, #dropzone.dragover {
+    border-color: var(--fg-accent-1);
+    background: var(--bg);
+  }
+  #dropzone p { margin: 0; }
+  #dropzone .sub { font-size: 14px; color: var(--bg-accent-1); margin-top: 0.3em; }
+  input[type="file"] { display: none; }
+
+  #error {
+    background: var(--bg-accent-2);
+    border: 1px solid var(--red);
+    padding: 1em 1.5em;
+    margin: 1em 0;
+    font-size: 0.9em;
+  }
+
+  /* Summary */
+  .summary {
+    background: var(--bg-accent-2);
+    border: 1px solid var(--bg-accent-3);
+    box-shadow: var(--shadow);
+    padding: 1.2em 1.5em;
+    margin: 1em 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1em;
+  }
+  .stat-label { font-size: 14px; color: var(--bg-accent-1); }
+  .stat-value { font-size: 1.25rem; font-weight: 600; }
+  .file-name {
+    grid-column: 1 / -1;
+    font-size: 14px;
+    border-bottom: 1px solid var(--bg-accent-3);
+    padding-bottom: 0.8em;
+    display: flex;
+    justify-content: space-between;
+    gap: 1em;
+    flex-wrap: wrap;
+  }
+  .badge {
+    padding: 0.05em 0.6em;
+    border-radius: 20px;
+    border: 1px solid var(--fg-accent-1);
+    color: var(--fg-accent-1);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4em 1.2em;
+    font-size: 14px;
+    margin: 1.5em 0 0.8em;
+  }
+  .legend-item { display: inline-flex; align-items: center; gap: 0.4em; }
+  .swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    display: inline-block;
+    flex: none;
+  }
+
+  /* Chart */
+  .chart {
+    display: flex;
+    background: var(--bg-accent-2);
+    border: 1px solid var(--bg-accent-3);
+    box-shadow: var(--shadow);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .y-axis {
+    position: relative;
+    flex: none;
+    width: 52px;
+    border-right: 1px solid var(--bg-accent-3);
+  }
+  .y-axis span {
+    position: absolute;
+    right: 8px;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: var(--bg-accent-1);
+  }
+  .scroller {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-color: var(--bg-accent-1) transparent;
+  }
+  .plot {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    width: max-content;
+    min-width: 100%;
+    padding: 0 16px;
+  }
+  .gridline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--grid);
+    pointer-events: none;
+  }
+  .gridline.base { background: var(--bg-accent-1); }
+
+  .group { display: flex; flex-direction: column; position: relative; }
+  .group-cols { display: flex; gap: 3px; }
+  .group-label {
+    margin-top: 4px;
+    border-top: 1.5px solid var(--bg-accent-1);
+    padding: 3px 2px 10px;
+    font-size: 12px;
+    color: var(--bg-accent-1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .group-label strong { color: var(--fg); font-weight: 600; }
+
+  .col {
+    width: 26px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+  }
+  .col:focus { outline: none; }
+  .bar-area {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .bar {
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    transition: filter 0.1s ease, opacity 0.1s ease;
+  }
+  .drill {
+    background-image: repeating-linear-gradient(45deg, transparent 0 3px, rgba(255, 255, 255, 0.45) 3px 5px);
+  }
+  .col:hover .bar { filter: brightness(1.1); }
+  .has-selection .col:not(.selected) .bar { opacity: 0.45; }
+  .col.selected .bar {
+    outline: 2px solid var(--fg);
+    outline-offset: 2px;
+  }
+  .col:focus-visible .bar {
+    outline: 2px dashed var(--fg-accent-1);
+    outline-offset: 2px;
+  }
+  .bar-value {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .col-num, .col-abbr {
+    font-size: 11px;
+    line-height: 1.3;
+    color: var(--bg-accent-1);
+  }
+  .col-num { margin-top: 5px; }
+  .col.selected .col-num, .col.selected .col-abbr { color: var(--fg); font-weight: 600; }
+
+  .rest {
+    flex: none;
+    width: 34px;
+    margin: 0 6px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .rest-label {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 11px;
+    color: var(--bg-accent-1);
+    white-space: nowrap;
+    padding-bottom: 4px;
+  }
+
+  .tooltip {
+    position: fixed;
+    z-index: 10;
+    pointer-events: none;
+    background: var(--fg);
+    color: var(--bg);
+    font-size: 13px;
+    line-height: 1.45;
+    padding: 0.5em 0.75em;
+    box-shadow: var(--shadow);
+    white-space: nowrap;
+    display: none;
+  }
+  .tooltip .swatch { margin-right: 0.3em; vertical-align: -1px; }
+
+  .chart-hint { font-size: 14px; margin: 0.6em 0 0; }
+
+  /* Editor panel */
+  .panel {
+    background: var(--bg-accent-2);
+    border: 1px solid var(--bg-accent-3);
+    box-shadow: var(--shadow);
+    padding: 1.2em 1.5em;
+    margin: 1em 0;
+    font-size: 0.95em;
+    min-height: 8.5em;
+  }
+  .panel-title { font-weight: 600; margin-bottom: 0.2em; }
+  .panel-meta { font-size: 14px; color: var(--bg-accent-1); margin-bottom: 1em; }
+  .panel-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5em;
+    margin-top: 0.7em;
+  }
+  .panel-row .label { min-width: 70px; font-weight: 600; font-size: 14px; }
+  .panel-note { font-size: 14px; color: var(--bg-accent-1); margin: 0.6em 0 0; }
+
+  .pill {
+    font: inherit;
+    font-size: 14px;
+    padding: 0.3em 0.8em;
+    border-radius: 20px;
+    background: var(--bg);
+    color: var(--fg);
+    border: 1px solid var(--bg-accent-1);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    transition: 0.15s ease;
+  }
+  .pill:hover { border-color: var(--fg-accent-1); box-shadow: var(--shadow); }
+  .pill.active { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+
+  /* Buttons */
+  button.btn {
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    background: var(--fg);
+    color: var(--bg);
+    border: 1px solid var(--fg);
+    padding: 0.45em 1.1em;
+    cursor: pointer;
+    transition: 0.2s ease;
+  }
+  button.btn:hover:not(:disabled) {
+    background: var(--fg-accent-1);
+    border-color: var(--fg-accent-1);
+    box-shadow: var(--shadow);
+  }
+  button.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.btn.secondary {
+    background: var(--bg);
+    color: var(--fg);
+    border: 1px solid var(--bg-accent-1);
+    font-weight: 400;
+    font-size: 14px;
+  }
+  button.btn.secondary:hover:not(:disabled) {
+    background: var(--bg);
+    border-color: var(--fg-accent-1);
+  }
+  .actions { display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; margin: 1.5em 0 0.5em; }
+
+  /* Change log */
+  #changes { padding-left: 1.2em; font-size: 14px; margin: 0.5em 0 0; }
+  #changes li { margin: 0.15em 0; }
+
+  .note {
+    background: var(--bg-accent-2);
+    border: 1px solid var(--bg-accent-3);
+    padding: 1em 1.5em;
+    margin: 1em 0;
+    font-size: 0.9em;
+    box-shadow: var(--shadow);
+  }
+  .note p { margin: 0.4em 0; }
+
+  kbd {
+    font-family: 'iA Duo', ui-monospace, monospace;
+    font-size: 0.85em;
+    border: 1px solid var(--bg-accent-3);
+    padding: 0 0.3em;
+  }
+
+  footer {
+    font-size: 14px;
+    color: var(--bg-accent-1);
+    padding: 2em 0;
+    margin-top: 3em;
+    border-top: 1px solid var(--bg-accent-1);
+  }
+  footer a { color: var(--bg-accent-1); margin-right: 1em; }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 600px) {
+    .panel, .summary { padding: 1em; }
+  }
+</style>
+<script>
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    if (!t) t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+</head>
+<body>
+<main>
+  <h1>Swim FIT editor</h1>
+  <p class="muted">Fix a pool swim recorded by a Garmin watch: relabel lengths with the wrong stroke, split a length where a turn was missed, or merge lengths that were double-counted. Everything happens in your browser, and you get back a corrected <code>.fit</code> file.</p>
+
+  <div id="dropzone">
+    <p><strong>Drop a .fit file here</strong> or click to select</p>
+    <p class="sub">Garmin Connect → activity → ⚙ → Export Original (unzip it first)</p>
+  </div>
+  <input type="file" id="fileInput" accept=".fit,.FIT,application/vnd.ant.fit">
+
+  <div id="error" class="hidden"></div>
+
+  <section id="editor" class="hidden">
+    <div class="summary" id="summary"></div>
+
+    <div class="wide">
+      <div class="legend" id="legend"></div>
+      <div class="chart" id="chart">
+        <div class="y-axis" id="yAxis"></div>
+        <div class="scroller" id="scroller">
+          <div class="plot" id="plot"></div>
+        </div>
+      </div>
+      <p class="chart-hint muted">Each column is one length; its height is the length time. Click to select, click more lengths to add them, <kbd>Shift</kbd>-click to select a run. <kbd>←</kbd> <kbd>→</kbd> move, <kbd>Esc</kbd> clears.</p>
+
+      <div class="panel" id="panel"></div>
+
+      <div class="actions">
+        <button class="btn" id="downloadBtn" disabled>Download edited .fit</button>
+        <button class="btn secondary" id="undoBtn" disabled>Undo</button>
+        <button class="btn secondary" id="resetBtn" disabled>Reset all</button>
+        <button class="btn secondary" id="newBtn">Open another file</button>
+      </div>
+    </div>
+
+    <div id="changesWrap" class="hidden">
+      <h2>Changes</h2>
+      <ol id="changes"></ol>
+    </div>
+
+    <div class="note">
+      <p><strong>Re-uploading:</strong> Garmin Connect and Strava reject a file that duplicates an existing activity, so delete the original activity before importing the edited file.</p>
+      <p class="muted">Interval and activity totals (distance, length counts, pace, SWOLF, strokes per length) are recalculated after each edit. Heart rate, calories and everything else in the file are left untouched.</p>
+    </div>
+  </section>
+
+  <footer>
+    <a href="https://tools.ben.report">Home</a>
+    <a href="https://github.com/penborter/tools/blob/main/swim-fit-editor.html">View Source</a>
+  </footer>
+</main>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ------------------------------------------------------------------ *
+   * FIT binary reading / writing
+   *
+   * The file is decoded into a flat list of data records, each keeping
+   * its raw field bytes. Writing re-emits every record (with fresh
+   * definition messages), so anything this tool doesn't understand is
+   * passed through byte-for-byte.
+   * ------------------------------------------------------------------ */
+
+  const FIT_EPOCH = 631065600; // 1989-12-31T00:00:00Z in Unix seconds
+
+  const BASE_TYPES = {
+    0x00: { size: 1, invalid: 0xFF },        // enum
+    0x01: { size: 1, invalid: 0x7F, signed: true },
+    0x02: { size: 1, invalid: 0xFF },
+    0x83: { size: 2, invalid: 0x7FFF, signed: true },
+    0x84: { size: 2, invalid: 0xFFFF },
+    0x85: { size: 4, invalid: 0x7FFFFFFF, signed: true },
+    0x86: { size: 4, invalid: 0xFFFFFFFF },
+    0x0A: { size: 1, invalid: 0 },           // uint8z
+    0x8B: { size: 2, invalid: 0 },           // uint16z
+    0x8C: { size: 4, invalid: 0 },           // uint32z
+    0x0D: { size: 1, invalid: 0xFF }         // byte
+  };
+
+  const CRC_TABLE = [
+    0x0000, 0xCC01, 0xD801, 0x1400, 0xF001, 0x3C00, 0x2800, 0xE401,
+    0xA001, 0x6C00, 0x7800, 0xB401, 0x5000, 0x9C01, 0x8801, 0x4400
+  ];
+
+  function crc16(bytes, start, end) {
+    let crc = 0;
+    for (let i = start; i < end; i++) {
+      const b = bytes[i];
+      let tmp = CRC_TABLE[crc & 0xF];
+      crc = (crc >> 4) & 0x0FFF;
+      crc = crc ^ tmp ^ CRC_TABLE[b & 0xF];
+      tmp = CRC_TABLE[crc & 0xF];
+      crc = (crc >> 4) & 0x0FFF;
+      crc = crc ^ tmp ^ CRC_TABLE[(b >> 4) & 0xF];
+    }
+    return crc;
+  }
+
+  function parseFit(buffer) {
+    const bytes = new Uint8Array(buffer);
+    const view = new DataView(buffer);
+    if (bytes.length < 14) throw new Error('File is too small to be a FIT file.');
+    const headerSize = bytes[0];
+    if ((headerSize !== 12 && headerSize !== 14) ||
+        String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11]) !== '.FIT') {
+      throw new Error('This doesn’t look like a FIT file.');
+    }
+    const protocolVersion = bytes[1];
+    const profileVersion = view.getUint16(2, true);
+    const dataSize = view.getUint32(4, true);
+    const end = headerSize + dataSize;
+    if (end + 2 > bytes.length) throw new Error('FIT file is truncated.');
+    if (crc16(bytes, 0, end) !== view.getUint16(end, true)) {
+      throw new Error('FIT file CRC check failed — the file may be corrupted.');
+    }
+
+    const defs = new Array(16);
+    const records = [];
+    let lastTimestamp = 0;
+    let pos = headerSize;
+
+    while (pos < end) {
+      const h = bytes[pos++];
+      if ((h & 0x80) === 0 && (h & 0x40)) {
+        // Definition message
+        const local = h & 0x0F;
+        const hasDev = (h & 0x20) !== 0;
+        const arch = bytes[pos + 1];
+        const little = arch === 0;
+        const gmn = view.getUint16(pos + 2, little);
+        const n = bytes[pos + 4];
+        pos += 5;
+        const fields = [];
+        for (let i = 0; i < n; i++) {
+          fields.push({ num: bytes[pos], size: bytes[pos + 1], bt: bytes[pos + 2] });
+          pos += 3;
+        }
+        const devFields = [];
+        if (hasDev) {
+          const nd = bytes[pos++];
+          for (let i = 0; i < nd; i++) {
+            devFields.push({ num: bytes[pos], size: bytes[pos + 1], idx: bytes[pos + 2] });
+            pos += 3;
+          }
+        }
+        defs[local] = { gmn, arch, fields, devFields };
+        continue;
+      }
+
+      // Data message (normal or compressed-timestamp header)
+      const compressed = (h & 0x80) !== 0;
+      const local = compressed ? (h >> 5) & 0x03 : h & 0x0F;
+      const def = defs[local];
+      if (!def) throw new Error('FIT file references an undefined message type.');
+      const little = def.arch === 0;
+      const rec = { gmn: def.gmn, arch: def.arch, fields: [], devFields: [] };
+      for (const f of def.fields) {
+        const b = bytes.slice(pos, pos + f.size);
+        pos += f.size;
+        rec.fields.push({ num: f.num, bt: f.bt, bytes: b });
+        if (f.num === 253 && f.size === 4) lastTimestamp = view.getUint32(pos - 4, little);
+      }
+      for (const f of def.devFields) {
+        rec.devFields.push({ num: f.num, idx: f.idx, bytes: bytes.slice(pos, pos + f.size) });
+        pos += f.size;
+      }
+      if (compressed) {
+        // Expand into a normal timestamp field so records can be reordered safely
+        const offset = h & 0x1F;
+        let ts = (lastTimestamp & ~0x1F) + offset;
+        if (offset < (lastTimestamp & 0x1F)) ts += 0x20;
+        lastTimestamp = ts >>> 0;
+        const b = new Uint8Array(4);
+        new DataView(b.buffer).setUint32(0, lastTimestamp, little);
+        rec.fields.unshift({ num: 253, bt: 0x86, bytes: b });
+      }
+      records.push(rec);
+    }
+
+    return { protocolVersion, profileVersion, records, chained: end + 2 < bytes.length };
+  }
+
+  function encodeFit(fit) {
+    const chunks = [];
+    let size = 0;
+    const push = (arr) => { chunks.push(arr); size += arr.length; };
+
+    const slots = new Array(16).fill(null);
+    let nextSlot = 0;
+
+    for (const rec of fit.records) {
+      const key = rec.gmn + '|' + rec.arch + '|' +
+        rec.fields.map(f => f.num + ':' + f.bytes.length + ':' + f.bt).join(',') + '|' +
+        rec.devFields.map(f => f.num + ':' + f.bytes.length + ':' + f.idx).join(',');
+      let local = slots.indexOf(key);
+      if (local === -1) {
+        local = nextSlot;
+        nextSlot = (nextSlot + 1) % 16;
+        slots[local] = key;
+        const hasDev = rec.devFields.length > 0;
+        const d = new Uint8Array(6 + rec.fields.length * 3 + (hasDev ? 1 + rec.devFields.length * 3 : 0));
+        const dv = new DataView(d.buffer);
+        d[0] = 0x40 | local | (hasDev ? 0x20 : 0);
+        d[1] = 0;
+        d[2] = rec.arch;
+        dv.setUint16(3, rec.gmn, rec.arch === 0);
+        d[5] = rec.fields.length;
+        let p = 6;
+        for (const f of rec.fields) { d[p++] = f.num; d[p++] = f.bytes.length; d[p++] = f.bt; }
+        if (hasDev) {
+          d[p++] = rec.devFields.length;
+          for (const f of rec.devFields) { d[p++] = f.num; d[p++] = f.bytes.length; d[p++] = f.idx; }
+        }
+        push(d);
+      }
+      let len = 1;
+      for (const f of rec.fields) len += f.bytes.length;
+      for (const f of rec.devFields) len += f.bytes.length;
+      const out = new Uint8Array(len);
+      out[0] = local;
+      let p = 1;
+      for (const f of rec.fields) { out.set(f.bytes, p); p += f.bytes.length; }
+      for (const f of rec.devFields) { out.set(f.bytes, p); p += f.bytes.length; }
+      push(out);
+    }
+
+    const file = new Uint8Array(14 + size + 2);
+    const v = new DataView(file.buffer);
+    file[0] = 14;
+    file[1] = fit.protocolVersion;
+    v.setUint16(2, fit.profileVersion, true);
+    v.setUint32(4, size, true);
+    file.set([0x2E, 0x46, 0x49, 0x54], 8); // ".FIT"
+    v.setUint16(12, crc16(file, 0, 12), true);
+    let p = 14;
+    for (const c of chunks) { file.set(c, p); p += c.length; }
+    v.setUint16(p, crc16(file, 0, p), true);
+    return file;
+  }
+
+  function cloneRecord(rec) {
+    return {
+      gmn: rec.gmn,
+      arch: rec.arch,
+      fields: rec.fields.map(f => ({ num: f.num, bt: f.bt, bytes: f.bytes.slice() })),
+      devFields: rec.devFields.map(f => ({ num: f.num, idx: f.idx, bytes: f.bytes.slice() })),
+      lap: rec.lap
+    };
+  }
+
+  function readInt(bytes, bt, little, offset) {
+    const v = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const t = BASE_TYPES[bt];
+    switch (t.size) {
+      case 1: return t.signed ? v.getInt8(offset) : v.getUint8(offset);
+      case 2: return t.signed ? v.getInt16(offset, little) : v.getUint16(offset, little);
+      case 4: return t.signed ? v.getInt32(offset, little) : v.getUint32(offset, little);
+    }
+  }
+
+  /** Raw (unscaled) value of a field, or null if absent / invalid. */
+  function get(rec, num) {
+    const f = rec.fields.find(x => x.num === num);
+    if (!f) return null;
+    const t = BASE_TYPES[f.bt];
+    if (!t || f.bytes.length < t.size) return null;
+    const val = readInt(f.bytes, f.bt, rec.arch === 0, 0);
+    return val === t.invalid ? null : val;
+  }
+
+  function has(rec, num) {
+    return get(rec, num) !== null;
+  }
+
+  /** Write a raw value into an existing field (silently ignored if absent). */
+  function set(rec, num, value) {
+    const f = rec.fields.find(x => x.num === num);
+    if (!f) return;
+    const t = BASE_TYPES[f.bt];
+    if (!t || f.bytes.length < t.size) return;
+    const max = t.signed ? Math.pow(2, t.size * 8 - 1) - 2 : Math.pow(2, t.size * 8) - 2;
+    let val = Math.round(value);
+    if (!isFinite(val)) val = t.invalid;
+    else val = Math.max(t.signed ? -max : 0, Math.min(max, val));
+    const v = new DataView(f.bytes.buffer, f.bytes.byteOffset, f.bytes.byteLength);
+    const little = rec.arch === 0;
+    switch (t.size) {
+      case 1: t.signed ? v.setInt8(0, val) : v.setUint8(0, val); break;
+      case 2: t.signed ? v.setInt16(0, val, little) : v.setUint16(0, val, little); break;
+      case 4: t.signed ? v.setInt32(0, val, little) : v.setUint32(0, val, little); break;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Swim model
+   * ------------------------------------------------------------------ */
+
+  const MSG = { SESSION: 18, LAP: 19, LENGTH: 101 };
+
+  // Field numbers from the FIT profile
+  const LEN = { ts: 253, idx: 254, start: 2, elapsed: 3, timer: 4, strokes: 5, speed: 6,
+    stroke: 7, cadence: 9, cal: 11, type: 12, metCal: 26 };
+  const LAP = { start: 2, dist: 9, cycles: 10, avgSpeed: 13, maxSpeed: 14, numLengths: 32,
+    firstLength: 35, stroke: 38, activeLengths: 40, swolf: 73, spl: 90, eAvgSpeed: 110,
+    eMaxSpeed: 111, timer: 8 };
+  const SES = { start: 2, timer: 8, dist: 9, cycles: 10, avgSpeed: 14, maxSpeed: 15, firstLap: 25,
+    numLaps: 26, numLengths: 33, stroke: 43, poolLength: 44, poolUnit: 46, activeLengths: 47,
+    spl: 79, swolf: 80, eAvgSpeed: 124, eMaxSpeed: 125 };
+
+  const STROKES = [
+    { id: 0, name: 'Freestyle', abbr: 'Fr', color: 'var(--s-free)' },
+    { id: 2, name: 'Breaststroke', abbr: 'Br', color: 'var(--s-breast)' },
+    { id: 1, name: 'Backstroke', abbr: 'Bk', color: 'var(--s-back)' },
+    { id: 3, name: 'Butterfly', abbr: 'Fly', color: 'var(--s-fly)' },
+    { id: 4, name: 'Drill', abbr: 'Dr', color: 'var(--s-drill)' }
+  ];
+  const MIXED = 5;
+  function strokeInfo(id) {
+    return STROKES.find(s => s.id === id) || { id, name: id === MIXED ? 'Mixed' : 'Unknown', abbr: '?', color: 'var(--s-other)' };
+  }
+
+  let fit = null;          // { protocolVersion, profileVersion, records }
+  let fileName = '';
+  let original = null;     // snapshot of the records as loaded
+  let history = [];        // undo stack of { records, changes }
+  let changes = [];        // human-readable change log
+  let selected = [];       // selected length records
+  let anchor = null;       // last clicked length (for shift-click ranges)
+  let poolLength = 25;     // metres
+  let poolUnitYards = false;
+  let lapCountsIdle = false;
+
+  const lengths = () => fit.records.filter(r => r.gmn === MSG.LENGTH);
+  const laps = () => fit.records.filter(r => r.gmn === MSG.LAP);
+  const sessions = () => fit.records.filter(r => r.gmn === MSG.SESSION);
+  const isActive = (len) => get(len, LEN.type) !== 0;
+  const secs = (len) => (get(len, LEN.timer) ?? get(len, LEN.elapsed) ?? 0) / 1000;
+
+  function loadFile(buffer, name) {
+    const parsed = parseFit(buffer);
+    const lens = parsed.records.filter(r => r.gmn === MSG.LENGTH);
+    if (!lens.length) {
+      throw new Error('No swimming lengths found. This tool works with pool swim activities recorded by a Garmin watch.');
+    }
+    fit = parsed;
+    fileName = name;
+
+    const ses = sessions();
+    const pl = ses.map(s => get(s, SES.poolLength)).find(v => v);
+    if (pl) {
+      poolLength = pl / 100;
+    } else {
+      // Fall back to distance / active lengths of the first lap that has both
+      const lap = laps().find(l => get(l, LAP.dist) && get(l, LAP.activeLengths));
+      poolLength = lap ? get(lap, LAP.dist) / 100 / get(lap, LAP.activeLengths) : 25;
+    }
+    poolUnitYards = ses.some(s => get(s, SES.poolUnit) === 1);
+
+    // Assign each length to the lap (interval) that owns it. A lap owns the lengths from its
+    // first_length_index up to the next lap's first_length_index, which includes rest ("idle")
+    // lengths that Garmin doesn't count in num_lengths.
+    const lapList = laps();
+    lens.forEach((len, i) => {
+      let owner = null;
+      lapList.forEach((lap, li) => {
+        const first = get(lap, LAP.firstLength);
+        if (first !== null && first <= i) owner = li;
+      });
+      len.lap = owner === null ? 0 : owner;
+    });
+
+    // Does this device count rest lengths in a lap's num_lengths?
+    lapCountsIdle = lapList.some((lap, li) => {
+      const group = lens.filter(l => l.lap === li);
+      return group.some(l => !isActive(l)) && get(lap, LAP.numLengths) === group.length;
+    });
+
+    original = snapshot();
+    history = [];
+    changes = [];
+    selected = [];
+    anchor = null;
+  }
+
+  function snapshot() {
+    return { records: fit.records.map(cloneRecord), changes: changes.slice() };
+  }
+
+  function restore(snap) {
+    fit.records = snap.records.map(cloneRecord);
+    changes = snap.changes.slice();
+    selected = [];
+    anchor = null;
+  }
+
+  function checkpoint() {
+    history.push(snapshot());
+  }
+
+  /** Recompute per-lap and per-session summaries after an edit. */
+  function recompute(dirtyLaps) {
+    const lens = lengths();
+    lens.forEach((len, i) => set(len, LEN.idx, i));
+
+    const lapList = laps();
+    let before = 0;
+    lapList.forEach((lap, li) => {
+      const group = lens.filter(l => l.lap === li);
+      const first = group.length ? lens.indexOf(group[0]) : before;
+      before = first + group.length;
+      if (has(lap, LAP.firstLength)) set(lap, LAP.firstLength, first);
+      if (!dirtyLaps.has(li)) return;
+
+      const active = group.filter(isActive);
+      const n = active.length;
+      const strokes = active.reduce((a, l) => a + (get(l, LEN.strokes) || 0), 0);
+      const time = active.reduce((a, l) => a + secs(l), 0);
+      const dist = n * poolLength;
+      const maxSpeed = Math.max(0, ...active.map(l => poolLength / secs(l)));
+
+      set(lap, LAP.numLengths, lapCountsIdle ? group.length : n);
+      set(lap, LAP.activeLengths, n);
+      set(lap, LAP.dist, dist * 100);
+      if (n) {
+        const kinds = new Set(active.map(l => get(l, LEN.stroke)));
+        set(lap, LAP.stroke, kinds.size === 1 ? [...kinds][0] : MIXED);
+        set(lap, LAP.spl, strokes / n * 10);
+        set(lap, LAP.swolf, time / n + strokes / n);
+        set(lap, LAP.avgSpeed, dist / time * 1000);
+        set(lap, LAP.eAvgSpeed, dist / time * 1000);
+        set(lap, LAP.maxSpeed, maxSpeed * 1000);
+        set(lap, LAP.eMaxSpeed, maxSpeed * 1000);
+      }
+    });
+
+    if (!dirtyLaps.size) return;
+    sessions().forEach(ses => {
+      const firstLap = get(ses, SES.firstLap) ?? 0;
+      const numLaps = get(ses, SES.numLaps) ?? lapList.length;
+      const sesLaps = lapList.slice(firstLap, firstLap + numLaps);
+      const lapIdx = new Set(sesLaps.map(l => lapList.indexOf(l)));
+      const active = lens.filter(l => lapIdx.has(l.lap) && isActive(l));
+      if (!active.length) return;
+      const n = active.length;
+      const strokes = active.reduce((a, l) => a + (get(l, LEN.strokes) || 0), 0);
+      const time = active.reduce((a, l) => a + secs(l), 0);
+      const dist = sesLaps.reduce((a, l) => a + (get(l, LAP.dist) || 0), 0);
+      const maxSpeed = Math.max(...active.map(l => poolLength / secs(l)));
+      const kinds = new Set(active.map(l => get(l, LEN.stroke)));
+
+      set(ses, SES.dist, dist);
+      set(ses, SES.numLengths, sesLaps.reduce((a, l) => a + (get(l, LAP.numLengths) || 0), 0));
+      set(ses, SES.activeLengths, n);
+      set(ses, SES.stroke, kinds.size === 1 ? [...kinds][0] : MIXED);
+      set(ses, SES.spl, strokes / n * 10);
+      set(ses, SES.swolf, time / n + strokes / n);
+      set(ses, SES.avgSpeed, dist / 100 / time * 1000);
+      set(ses, SES.eAvgSpeed, dist / 100 / time * 1000);
+      set(ses, SES.maxSpeed, maxSpeed * 1000);
+      set(ses, SES.eMaxSpeed, maxSpeed * 1000);
+    });
+  }
+
+  function lengthLabel(len) {
+    const lens = lengths();
+    const group = lens.filter(l => l.lap === len.lap && isActive(l));
+    const intervalNo = intervalNumber(len.lap);
+    return 'interval ' + intervalNo + ', length ' + (group.indexOf(len) + 1);
+  }
+
+  function intervalNumber(lapIdx) {
+    // Number intervals by swim laps only (rest laps don't count)
+    const lens = lengths();
+    let n = 0;
+    for (let i = 0; i <= lapIdx; i++) {
+      if (lens.some(l => l.lap === i && isActive(l))) n++;
+    }
+    return n;
+  }
+
+  /* ---- edit operations ---- */
+
+  function setStroke(strokeId) {
+    const targets = selected.filter(l => get(l, LEN.stroke) !== strokeId);
+    if (!targets.length) return;
+    checkpoint();
+    const name = strokeInfo(strokeId).name.toLowerCase();
+    const descr = targets.length === 1
+      ? 'Changed ' + lengthLabel(targets[0]) + ' from ' + strokeInfo(get(targets[0], LEN.stroke)).name.toLowerCase() + ' to ' + name
+      : 'Changed ' + targets.length + ' lengths to ' + name;
+    targets.forEach(l => set(l, LEN.stroke, strokeId));
+    changes.push(descr);
+    recompute(new Set(targets.map(l => l.lap)));
+    render();
+  }
+
+  function splitLength() {
+    if (selected.length !== 1) return;
+    const len = selected[0];
+    checkpoint();
+    const label = lengthLabel(len);
+    const second = cloneRecord(len);
+
+    const elapsed = get(len, LEN.elapsed) || 0;
+    const timer = get(len, LEN.timer) ?? elapsed;
+    const e1 = Math.floor(elapsed / 2), t1 = Math.floor(timer / 2);
+    set(len, LEN.elapsed, e1); set(second, LEN.elapsed, elapsed - e1);
+    set(len, LEN.timer, t1); set(second, LEN.timer, timer - t1);
+    set(second, LEN.start, (get(len, LEN.start) || 0) + Math.round(e1 / 1000));
+
+    for (const num of [LEN.strokes, LEN.cal, LEN.metCal]) {
+      const v = get(len, num);
+      if (v === null) continue;
+      const a = Math.ceil(v / 2);
+      set(len, num, a);
+      set(second, num, v - a);
+    }
+    for (const l of [len, second]) updateLengthRates(l);
+
+    fit.records.splice(fit.records.indexOf(len) + 1, 0, second);
+    changes.push('Split ' + label + ' into two lengths');
+    recompute(new Set([len.lap]));
+    selected = [len, second];
+    render();
+  }
+
+  function mergeLengths() {
+    const run = mergeableRun();
+    if (!run) return;
+    checkpoint();
+    const label = lengthLabel(run[0]);
+    const keep = run[0];
+    const last = run[run.length - 1];
+    for (const num of [LEN.elapsed, LEN.timer, LEN.strokes, LEN.cal, LEN.metCal]) {
+      if (get(keep, num) === null) continue;
+      set(keep, num, run.reduce((a, l) => a + (get(l, num) || 0), 0));
+    }
+    if (has(last, LEN.ts)) set(keep, LEN.ts, get(last, LEN.ts));
+    updateLengthRates(keep);
+    for (const l of run.slice(1)) fit.records.splice(fit.records.indexOf(l), 1);
+    changes.push('Merged ' + run.length + ' lengths starting at ' + label);
+    recompute(new Set([keep.lap]));
+    selected = [keep];
+    anchor = keep;
+    render();
+  }
+
+  function updateLengthRates(len) {
+    const t = secs(len);
+    if (t > 0) {
+      set(len, LEN.speed, poolLength / t * 1000);
+      const s = get(len, LEN.strokes);
+      if (s !== null && has(len, LEN.cadence)) set(len, LEN.cadence, s / t * 60);
+    }
+  }
+
+  /** The selection as a consecutive run of active lengths in one interval, or null. */
+  function mergeableRun() {
+    if (selected.length < 2) return null;
+    const lens = lengths();
+    const sorted = selected.slice().sort((a, b) => lens.indexOf(a) - lens.indexOf(b));
+    for (let i = 1; i < sorted.length; i++) {
+      if (lens.indexOf(sorted[i]) !== lens.indexOf(sorted[i - 1]) + 1) return null;
+      if (sorted[i].lap !== sorted[0].lap) return null;
+    }
+    return sorted;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Rendering
+   * ------------------------------------------------------------------ */
+
+  const $ = (id) => document.getElementById(id);
+  const CHART_H = 240;
+
+  function fmtDuration(s, decimals) {
+    if (s === null || !isFinite(s)) return '–';
+    const sign = s < 0 ? '-' : '';
+    s = Math.abs(s);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    const secStr = decimals ? sec.toFixed(decimals).padStart(3 + decimals, '0') : String(Math.floor(sec)).padStart(2, '0');
+    return sign + (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + secStr;
+  }
+
+  function fmtDistance(metres) {
+    if (poolUnitYards) return Math.round(metres / 0.9144).toLocaleString() + ' yd';
+    return Math.round(metres).toLocaleString() + ' m';
+  }
+
+  function pacePer100(secondsPerLength) {
+    const per = poolUnitYards ? poolLength / 0.9144 : poolLength;
+    return fmtDuration(secondsPerLength * 100 / per) + (poolUnitYards ? ' /100yd' : ' /100m');
+  }
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  function render() {
+    renderSummary();
+    renderLegend();
+    renderChart();
+    renderPanel();
+    $('undoBtn').disabled = history.length === 0;
+    $('resetBtn').disabled = changes.length === 0;
+    $('downloadBtn').disabled = changes.length === 0;
+    const list = $('changes');
+    list.innerHTML = '';
+    changes.forEach(c => list.appendChild(el('li', '', c)));
+    $('changesWrap').classList.toggle('hidden', changes.length === 0);
+  }
+
+  function renderSummary() {
+    const lens = lengths();
+    const active = lens.filter(isActive);
+    const swimTime = active.reduce((a, l) => a + secs(l), 0);
+    const ses = sessions()[0];
+    const start = ses && get(ses, SES.start);
+    const timer = ses && get(ses, SES.timer);
+
+    const box = $('summary');
+    box.innerHTML = '';
+    const head = el('div', 'file-name');
+    const left = el('span');
+    left.appendChild(el('strong', '', fileName));
+    if (start) {
+      const d = new Date((start + FIT_EPOCH) * 1000);
+      left.appendChild(el('span', 'muted', ' · ' + d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })));
+    }
+    head.appendChild(left);
+    if (changes.length) head.appendChild(el('span', 'badge', changes.length + (changes.length === 1 ? ' edit' : ' edits')));
+    box.appendChild(head);
+
+    const stats = [
+      ['Distance', fmtDistance(active.length * poolLength)],
+      ['Lengths', String(active.length)],
+      ['Pool', fmtDistance(poolLength)],
+      ['Swim time', fmtDuration(swimTime)],
+      ['Avg pace', active.length ? pacePer100(swimTime / active.length) : '–']
+    ];
+    if (timer) stats.splice(4, 0, ['Total time', fmtDuration(timer / 1000)]);
+    for (const [label, value] of stats) {
+      const s = el('div');
+      s.appendChild(el('div', 'stat-label', label));
+      s.appendChild(el('div', 'stat-value num', value));
+      box.appendChild(s);
+    }
+  }
+
+  function swatch(stroke) {
+    const s = el('span', 'swatch');
+    s.style.backgroundColor = stroke.color;
+    if (stroke.id === 4) s.classList.add('drill');
+    return s;
+  }
+
+  function renderLegend() {
+    const active = lengths().filter(isActive);
+    const counts = new Map();
+    active.forEach(l => {
+      const id = get(l, LEN.stroke);
+      counts.set(id, (counts.get(id) || 0) + 1);
+    });
+    const legend = $('legend');
+    legend.innerHTML = '';
+    const ids = STROKES.map(s => s.id).filter(id => counts.has(id));
+    for (const id of counts.keys()) if (!ids.includes(id)) ids.push(id);
+    for (const id of ids) {
+      const s = strokeInfo(id);
+      const item = el('span', 'legend-item');
+      item.appendChild(swatch(s));
+      item.appendChild(el('span', '', s.name));
+      item.appendChild(el('span', 'muted num', '×' + counts.get(id)));
+      legend.appendChild(item);
+    }
+  }
+
+  let yMax = 60;
+
+  function renderChart() {
+    const lens = lengths();
+    const active = lens.filter(isActive);
+    const longest = Math.max(30, ...active.map(secs));
+    const step = longest > 240 ? 60 : longest > 120 ? 30 : 15;
+    yMax = Math.ceil(longest * 1.08 / step) * step;
+
+    // Y axis
+    const axis = $('yAxis');
+    axis.innerHTML = '';
+    axis.style.height = CHART_H + 'px';
+    const plot = $('plot');
+    const scrollLeft = $('scroller').scrollLeft;
+    plot.innerHTML = '';
+    for (let v = 0; v <= yMax; v += step) {
+      const y = CHART_H - v / yMax * CHART_H;
+      const lbl = el('span', 'num', fmtDuration(v));
+      lbl.style.top = Math.max(7, y) + 'px';
+      axis.appendChild(lbl);
+      const line = el('div', 'gridline' + (v === 0 ? ' base' : ''));
+      line.style.top = y + 'px';
+      plot.appendChild(line);
+    }
+
+    plot.classList.toggle('has-selection', selected.length > 0);
+
+    // Group consecutive lengths by lap; rest (idle) lengths become gap markers
+    const lapList = laps();
+    let currentGroup = null;
+    let currentLap = null;
+    let restSecs = 0;
+
+    const flushRest = () => {
+      if (restSecs <= 0) return;
+      const r = el('div', 'rest');
+      r.style.height = CHART_H + 'px';
+      r.appendChild(el('span', 'rest-label', 'rest ' + fmtDuration(restSecs)));
+      r.title = 'Rest ' + fmtDuration(restSecs, 1);
+      plot.appendChild(r);
+      restSecs = 0;
+    };
+
+    const finishGroup = () => {
+      if (!currentGroup) return;
+      const { node, lap, n } = currentGroup;
+      const lapRec = lapList[lap];
+      const time = currentGroup.time;
+      const label = el('div', 'group-label');
+      label.appendChild(el('strong', '', String(intervalNumber(lap))));
+      label.appendChild(document.createTextNode(' · ' + fmtDistance(n * poolLength) +
+        (n > 3 ? ' · ' + fmtDuration(lapRec && get(lapRec, LAP.timer) ? get(lapRec, LAP.timer) / 1000 : time) : '')));
+      label.title = 'Interval ' + intervalNumber(lap);
+      node.appendChild(label);
+      currentGroup = null;
+    };
+
+    const perLap = new Map();
+    lens.forEach((len) => {
+      if (!isActive(len)) {
+        finishGroup();
+        restSecs += secs(len);
+        return;
+      }
+      if (!currentGroup || currentLap !== len.lap) {
+        finishGroup();
+        flushRest();
+        currentLap = len.lap;
+        const node = el('div', 'group');
+        const cols = el('div', 'group-cols');
+        node.appendChild(cols);
+        plot.appendChild(node);
+        currentGroup = { node, cols, lap: len.lap, n: 0, time: 0 };
+      }
+      const lengthNo = (perLap.get(len.lap) || 0) + 1;
+      perLap.set(len.lap, lengthNo);
+      currentGroup.n++;
+      currentGroup.time += secs(len);
+      currentGroup.cols.appendChild(renderColumn(len, lengthNo));
+    });
+    finishGroup();
+    flushRest();
+
+    $('scroller').scrollLeft = scrollLeft;
+  }
+
+  function renderColumn(len, lengthNo) {
+    const stroke = strokeInfo(get(len, LEN.stroke));
+    const t = secs(len);
+    const col = el('button', 'col');
+    col.type = 'button';
+    col.setAttribute('aria-label', 'Length ' + lengthNo + ', ' + stroke.name + ', ' + fmtDuration(t, 1));
+    if (selected.includes(len)) col.classList.add('selected');
+
+    const area = el('div', 'bar-area');
+    area.style.height = CHART_H + 'px';
+    const bar = el('div', 'bar' + (stroke.id === 4 ? ' drill' : ''));
+    bar.style.height = Math.max(2, t / yMax * CHART_H) + 'px';
+    bar.style.backgroundColor = stroke.color;
+    area.appendChild(bar);
+    if (selected.includes(len)) {
+      const v = el('span', 'bar-value num', fmtDuration(t, 1));
+      v.style.bottom = (Math.max(2, t / yMax * CHART_H) + 6) + 'px';
+      area.appendChild(v);
+    }
+    col.appendChild(area);
+    col.appendChild(el('span', 'col-num num', String(lengthNo)));
+    col.appendChild(el('span', 'col-abbr', stroke.abbr));
+
+    col.addEventListener('click', (e) => onColumnClick(len, e));
+    col.addEventListener('mouseenter', () => showTooltip(col, len, lengthNo));
+    col.addEventListener('mouseleave', hideTooltip);
+    col.addEventListener('focus', () => showTooltip(col, len, lengthNo));
+    col.addEventListener('blur', hideTooltip);
+    return col;
+  }
+
+  function showTooltip(col, len, lengthNo) {
+    const tip = $('tooltip');
+    const stroke = strokeInfo(get(len, LEN.stroke));
+    const t = secs(len);
+    const strokes = get(len, LEN.strokes);
+    tip.innerHTML = '';
+    const head = el('div');
+    head.appendChild(swatch(stroke));
+    head.appendChild(el('strong', '', stroke.name));
+    tip.appendChild(head);
+    tip.appendChild(el('div', '', 'Interval ' + intervalNumber(len.lap) + ', length ' + lengthNo));
+    tip.appendChild(el('div', 'num', fmtDuration(t, 1) + '  ·  ' + pacePer100(t)));
+    if (strokes !== null) tip.appendChild(el('div', 'num', strokes + ' strokes  ·  SWOLF ' + Math.round(t + strokes)));
+    tip.style.display = 'block';
+    const r = col.getBoundingClientRect();
+    const tr = tip.getBoundingClientRect();
+    let left = r.left + r.width / 2 - tr.width / 2;
+    left = Math.max(8, Math.min(window.innerWidth - tr.width - 8, left));
+    let top = r.top + 20;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+
+  function hideTooltip() {
+    $('tooltip').style.display = 'none';
+  }
+
+  function onColumnClick(len, e) {
+    const lens = lengths().filter(isActive);
+    if (e.shiftKey && anchor && lens.includes(anchor)) {
+      const a = lens.indexOf(anchor), b = lens.indexOf(len);
+      selected = lens.slice(Math.min(a, b), Math.max(a, b) + 1);
+    } else if (selected.includes(len)) {
+      selected = selected.filter(l => l !== len);
+      anchor = selected[selected.length - 1] || null;
+    } else {
+      selected.push(len);
+      anchor = len;
+    }
+    renderChart();
+    renderPanel();
+    focusColumn(len);
+  }
+
+  function focusColumn(len) {
+    const lens = lengths().filter(isActive);
+    const cols = $('plot').querySelectorAll('.col');
+    const i = lens.indexOf(len);
+    if (cols[i]) {
+      cols[i].focus({ preventScroll: true });
+      cols[i].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+  }
+
+  function renderPanel() {
+    const panel = $('panel');
+    panel.innerHTML = '';
+
+    if (!selected.length) {
+      panel.appendChild(el('div', 'panel-title', 'Nothing selected'));
+      panel.appendChild(el('p', 'panel-note',
+        'Click a column to change its stroke or split it in two. Select two or more neighbouring lengths to merge them into one.'));
+      return;
+    }
+
+    const lens = lengths();
+    const sorted = selected.slice().sort((a, b) => lens.indexOf(a) - lens.indexOf(b));
+    const total = sorted.reduce((a, l) => a + secs(l), 0);
+    const strokesTotal = sorted.reduce((a, l) => a + (get(l, LEN.strokes) || 0), 0);
+    const current = new Set(sorted.map(l => get(l, LEN.stroke)));
+
+    if (sorted.length === 1) {
+      const len = sorted[0];
+      const label = lengthLabel(len);
+      panel.appendChild(el('div', 'panel-title', label.charAt(0).toUpperCase() + label.slice(1)));
+      const strokes = get(len, LEN.strokes);
+      panel.appendChild(el('div', 'panel-meta num', fmtDuration(total, 1) + ' · ' + pacePer100(total) +
+        (strokes !== null ? ' · ' + strokes + ' strokes' : '')));
+    } else {
+      panel.appendChild(el('div', 'panel-title', sorted.length + ' lengths selected'));
+      panel.appendChild(el('div', 'panel-meta num', fmtDuration(total, 1) + ' total · ' + strokesTotal + ' strokes'));
+    }
+
+    const strokeRow = el('div', 'panel-row');
+    strokeRow.appendChild(el('span', 'label', 'Stroke'));
+    for (const s of STROKES) {
+      const b = el('button', 'pill');
+      b.type = 'button';
+      b.appendChild(swatch(s));
+      b.appendChild(document.createTextNode(s.name));
+      if (current.size === 1 && current.has(s.id)) b.classList.add('active');
+      b.addEventListener('click', () => setStroke(s.id));
+      strokeRow.appendChild(b);
+    }
+    panel.appendChild(strokeRow);
+
+    const actionRow = el('div', 'panel-row');
+    actionRow.appendChild(el('span', 'label', 'Edit'));
+    if (sorted.length === 1) {
+      const split = el('button', 'btn secondary', 'Split into two lengths');
+      split.type = 'button';
+      split.addEventListener('click', splitLength);
+      actionRow.appendChild(split);
+    } else {
+      const run = mergeableRun();
+      const merge = el('button', 'btn secondary', 'Merge into one length');
+      merge.type = 'button';
+      merge.disabled = !run;
+      merge.addEventListener('click', mergeLengths);
+      actionRow.appendChild(merge);
+    }
+    const clear = el('button', 'btn secondary', 'Clear selection');
+    clear.type = 'button';
+    clear.addEventListener('click', () => { selected = []; anchor = null; renderChart(); renderPanel(); });
+    actionRow.appendChild(clear);
+    panel.appendChild(actionRow);
+
+    if (sorted.length === 1) {
+      panel.appendChild(el('p', 'panel-note', 'Splitting makes two lengths of ' + fmtDuration(total / 2, 1) +
+        ' each — use it where the watch missed a turn.'));
+    } else if (!mergeableRun()) {
+      panel.appendChild(el('p', 'panel-note', 'Only neighbouring lengths in the same interval can be merged.'));
+    } else {
+      const s = strokeInfo(get(sorted[0], LEN.stroke)).name.toLowerCase();
+      panel.appendChild(el('p', 'panel-note', 'Merging makes one ' + fmtDuration(total, 1) + ' ' + s +
+        ' length — use it where the watch counted a turn that didn’t happen.'));
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Wiring
+   * ------------------------------------------------------------------ */
+
+  function showError(msg) {
+    const e = $('error');
+    e.textContent = msg;
+    e.classList.toggle('hidden', !msg);
+  }
+
+  function handleFile(file) {
+    if (!file) return;
+    showError('');
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        loadFile(reader.result, file.name);
+      } catch (err) {
+        showError(err.message);
+        return;
+      }
+      if (fit.chained) showError('This file contains more than one FIT stream; only the first is edited and saved.');
+      $('dropzone').classList.add('hidden');
+      $('editor').classList.remove('hidden');
+      $('scroller').scrollLeft = 0;
+      render();
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  const dropzone = $('dropzone');
+  const fileInput = $('fileInput');
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    handleFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', () => { handleFile(fileInput.files[0]); fileInput.value = ''; });
+
+  $('newBtn').addEventListener('click', () => {
+    if (changes.length && !confirm('Discard your edits to this file?')) return;
+    fit = null;
+    $('editor').classList.add('hidden');
+    $('dropzone').classList.remove('hidden');
+    showError('');
+    fileInput.click();
+  });
+
+  $('undoBtn').addEventListener('click', () => {
+    if (!history.length) return;
+    restore(history.pop());
+    render();
+  });
+
+  $('resetBtn').addEventListener('click', () => {
+    if (!changes.length) return;
+    checkpoint();
+    restore(original);
+    render();
+  });
+
+  $('downloadBtn').addEventListener('click', () => {
+    const bytes = encodeFit(fit);
+    const blob = new Blob([bytes], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName.replace(/\.fit$/i, '') + '-edited.fit';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+
+  // Click on empty chart space clears the selection
+  $('plot').addEventListener('click', (e) => {
+    if (e.target.closest('.col')) return;
+    if (!selected.length) return;
+    selected = [];
+    anchor = null;
+    renderChart();
+    renderPanel();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (!fit || $('editor').classList.contains('hidden')) return;
+    if (e.target.matches('input, textarea')) return;
+    if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+      e.preventDefault();
+      $('undoBtn').click();
+      return;
+    }
+    if (e.key === 'Escape' && selected.length) {
+      selected = [];
+      anchor = null;
+      renderChart();
+      renderPanel();
+      return;
+    }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      const lens = lengths().filter(isActive);
+      const from = anchor && lens.includes(anchor) ? lens.indexOf(anchor) : (e.key === 'ArrowLeft' ? lens.length : -1);
+      const to = Math.max(0, Math.min(lens.length - 1, from + (e.key === 'ArrowLeft' ? -1 : 1)));
+      e.preventDefault();
+      if (e.shiftKey && anchor) {
+        if (!selected.includes(lens[to])) selected.push(lens[to]);
+      } else {
+        selected = [lens[to]];
+      }
+      anchor = lens[to];
+      renderChart();
+      renderPanel();
+      focusColumn(lens[to]);
+    }
+  });
+
+  window.addEventListener('scroll', hideTooltip, true);
+
+  // Exposed for testing
+  window.__swimFit = { parseFit, encodeFit };
+})();
+</script>
+</body>
+</html>

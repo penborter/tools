@@ -50,6 +50,8 @@ Each tool in this repository follows the "one-shot" philosophy:
 ├── recipes.html                      # Recipe/meal planning tracker
 ├── chromecast-screensaver-crop.html  # Chromecast photo prep tool
 ├── epub-locs.html                    # EPUB LOC estimator
+├── jpeg-to-webp.html                 # JPEG → WebP batch converter
+├── swim-fit-editor.html              # Garmin pool swim .fit editor
 ├── CNAME                             # GitHub Pages custom domain
 └── README.md                         # Public-facing documentation
 ```
@@ -82,6 +84,12 @@ Each tool in this repository follows the "one-shot" philosophy:
 - Displays book metadata and chapter breakdown
 - LOC lookup functionality to find specific locations
 - CSV export for chapter data
+
+### Swim FIT Editor (swim-fit-editor.html)
+- Edits Garmin pool swim `.fit` files: change stroke, split or merge lengths
+- Includes a small FIT binary reader/writer: records keep raw field bytes and are re-encoded with fresh definition messages, so unknown messages and fields pass through untouched
+- One chart column per FIT `length` message; FIT `lap` messages are shown as intervals
+- After each edit, recomputes lap and session summaries (indices, distance, length counts, speed, SWOLF, strokes per length)
 
 ## Guidelines for Adding New Tools
 
