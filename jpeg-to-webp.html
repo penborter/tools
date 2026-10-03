@@ -261,15 +261,15 @@
 <body>
 <main>
   <h1>JPEG → WebP</h1>
-  <p class="muted">Batch-convert JPEGs to WebP for the photo gallery. Resizes to your chosen sizes (never enlarging), encodes entirely in the browser, and zips the results ready for upload to Cloudflare R2.</p>
+  <p class="muted">Batch-convert JPEGs (or PDF scans) to WebP for the photo gallery. Resizes to your chosen sizes (never enlarging), encodes entirely in the browser, and zips the results ready for upload to Cloudflare R2.</p>
 
   <div id="warning">Your browser doesn't support WebP encoding via canvas. Use Chrome, Edge, or Firefox for this tool.</div>
 
   <div id="dropzone">
     <p><strong>Drop JPEGs here</strong> or click to select</p>
-    <p class="sub">Multiple files welcome — PNG works too</p>
+    <p class="sub">Multiple files welcome — PNG and PDF work too (one image per PDF page)</p>
   </div>
-  <input type="file" id="fileInput" accept="image/jpeg,image/png" multiple>
+  <input type="file" id="fileInput" accept="image/jpeg,image/png,application/pdf,.pdf" multiple>
 
   <div class="settings">
     <div class="setting-row">
@@ -320,6 +320,12 @@
 <script>
 (function () {
   const SUFFIXES = { 400: '-thumb', 1200: '-med', 2400: '' };
+  const PDFJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
+  const PDFJS_WORKER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
+  // Rasterise PDF pages at 2x the largest output, then step down — but stay
+  // under ~16.7MP, which is the canvas area limit on iOS Safari.
+  const PDF_SUPERSAMPLE = 2;
+  const MAX_CANVAS_AREA = 16777216;
   const dropzone = document.getElementById('dropzone');
   const fileInput = document.getElementById('fileInput');
   const convertBtn = document.getElementById('convertBtn');
@@ -369,7 +375,7 @@
   dropzone.addEventListener('drop', e => addFiles(e.dataTransfer.files));
 
   function addFiles(fileList) {
-    const accepted = Array.from(fileList).filter(f => /image\/(jpeg|png)/.test(f.type));
+    const accepted = Array.from(fileList).filter(f => /image\/(jpeg|png)/.test(f.type) || isPdf(f));
     queue = queue.concat(accepted);
     if (queue.length) {
       convertBtn.disabled = !webpSupported;
@@ -394,6 +400,52 @@
     return filename.replace(/\.[^.]+$/, '');
   }
 
+  function isPdf(file) {
+    return file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+  }
+
+  let pdfjsPromise = null;
+  function loadPdfjs() {
+    if (!pdfjsPromise) {
+      pdfjsPromise = import(PDFJS_URL).then(lib => {
+        lib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+        return lib;
+      }).catch(err => { pdfjsPromise = null; throw new Error('Could not load PDF.js'); });
+    }
+    return pdfjsPromise;
+  }
+
+  // Yields { base, source } for each image in a file: one for a JPEG/PNG,
+  // one per page for a PDF. `source` is anything drawImage accepts.
+  async function* sourcesFor(file, maxDim) {
+    if (!isPdf(file)) {
+      yield { base: baseName(file.name), source: await loadImage(file) };
+      return;
+    }
+    const pdfjs = await loadPdfjs();
+    const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+    try {
+      for (let n = 1; n <= pdf.numPages; n++) {
+        statusEl.textContent = 'Rendering ' + file.name + ' page ' + n + ' of ' + pdf.numPages + '…';
+        const page = await pdf.getPage(n);
+        const unit = page.getViewport({ scale: 1 });
+        let scale = (maxDim * PDF_SUPERSAMPLE) / Math.max(unit.width, unit.height);
+        scale = Math.min(scale, Math.sqrt(MAX_CANVAS_AREA / (unit.width * unit.height)));
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.floor(viewport.width);
+        canvas.height = Math.floor(viewport.height);
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+        page.cleanup();
+        const base = baseName(file.name) + (pdf.numPages > 1 ? '-p' + n : '');
+        yield { base, source: canvas };
+        canvas.width = canvas.height = 0; // free the backing store promptly
+      }
+    } finally {
+      pdf.destroy();
+    }
+  }
+
   function loadImage(file) {
     return new Promise((resolve, reject) => {
       const url = URL.createObjectURL(file);
@@ -406,7 +458,8 @@
 
   // Step-down resize for better quality on large reductions
   function resizeToCanvas(img, maxDim) {
-    let w = img.naturalWidth, h = img.naturalHeight;
+    const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    let w = iw, h = ih;
     // fit inside maxDim x maxDim, without enlargement
     if (w > maxDim || h > maxDim) {
       const ratio = Math.min(maxDim / w, maxDim / h);
@@ -414,7 +467,7 @@
       h = Math.round(h * ratio);
     }
     let source = img;
-    let sw = img.naturalWidth, sh = img.naturalHeight;
+    let sw = iw, sh = ih;
     // halve repeatedly until within 2x of target, then final pass
     while (sw / 2 >= w && sh / 2 >= h) {
       const c = document.createElement('canvas');
@@ -449,40 +502,45 @@
 
     const files = queue;
     queue = [];
-    let done = 0;
+    const bases = [];
+    let done = 0, failed = 0;
 
     for (const file of files) {
       statusEl.textContent = 'Converting ' + (done + 1) + ' of ' + files.length + '…';
       try {
-        const img = await loadImage(file);
-        for (const size of sizes) {
-          const canvas = resizeToCanvas(img, size);
-          const blob = await canvasToWebP(canvas, quality);
-          const name = baseName(file.name) + (SUFFIXES[size] !== undefined ? SUFFIXES[size] : '-' + size) + '.webp';
-          outputs.push({
-            name, blob,
-            originalName: file.name,
-            originalSize: file.size,
-            size: blob.size,
-            width: canvas.width,
-            height: canvas.height,
-            dim: size
-          });
-          addRow(outputs[outputs.length - 1]);
+        for await (const { base, source } of sourcesFor(file, sizes[sizes.length - 1])) {
+          bases.push(base);
+          for (const size of sizes) {
+            const canvas = resizeToCanvas(source, size);
+            const blob = await canvasToWebP(canvas, quality);
+            const name = base + (SUFFIXES[size] !== undefined ? SUFFIXES[size] : '-' + size) + '.webp';
+            outputs.push({
+              name, blob,
+              originalName: file.name,
+              originalSize: file.size,
+              size: blob.size,
+              width: canvas.width,
+              height: canvas.height,
+              dim: size
+            });
+            addRow(outputs[outputs.length - 1]);
+          }
         }
       } catch (err) {
-        statusEl.textContent = 'Error: ' + err.message;
+        console.error(err);
+        failed++;
       }
       done++;
     }
 
     statusEl.textContent = 'Done — ' + outputs.length + ' file' + (outputs.length === 1 ? '' : 's') + ' ready';
+    if (failed) statusEl.textContent += ' (' + failed + ' failed — see console)';
     convertBtn.disabled = true;
     resultsDiv.classList.remove('hidden');
     zipBtn.classList.remove('hidden');
     clearBtn.classList.remove('hidden');
     updateTotals();
-    updateSnippet(files, sizes);
+    updateSnippet(bases, sizes);
   });
 
   function addRow(out) {
@@ -512,9 +570,9 @@
     totalsEl.textContent = 'Originals: ' + fmtBytes(origTotal) + ' → WebP (all sizes): ' + fmtBytes(webpTotal);
   }
 
-  function updateSnippet(files, sizes) {
-    if (!files.length) return;
-    const example = baseName(files[0].name);
+  function updateSnippet(bases, sizes) {
+    if (!bases.length) return;
+    const example = bases[0];
     const srcset = sizes.map(s => {
       const suffix = SUFFIXES[s] !== undefined ? SUFFIXES[s] : '-' + s;
       return 'https://images.ben.report/' + example + suffix + '.webp ' + s + 'w';

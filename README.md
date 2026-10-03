@@ -51,8 +51,9 @@ Estimate Amazon Kindle Location (LOC) numbers for EPUB files. Features:
 ### JPEG → WebP Converter
 **[https://tools.ben.report/jpeg-to-webp.html](https://tools.ben.report/jpeg-to-webp.html)**
 
-Batch-convert JPEGs (and PNGs) to WebP entirely in the browser. Features:
+Batch-convert JPEGs (and PNGs, or PDF scans) to WebP entirely in the browser. Features:
 - Drag-and-drop or select multiple images at once
+- PDFs are rasterised with PDF.js (lazy-loaded), one image per page (`name-p1.webp`, …)
 - Output multiple sizes per image (400px thumb, 1200px medium, 2400px full)
 - Quality-controlled, high-quality step-down resizing (never enlarges)
 - Per-file results table showing dimensions and size savings
