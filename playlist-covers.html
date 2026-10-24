@@ -31,12 +31,11 @@
         }
 
         .main-content {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
             gap: 40px;
-            align-items: start;
-            width: fit-content;
-            margin: auto;
+            align-items: flex-start;
         }
 
         .canvas-container {
@@ -47,7 +46,9 @@
         }
 
         #gridCanvas {
-            max-height: 70vh;
+            /* Square preview: as tall as 70% of the viewport, but never wider than the screen */
+            width: min(70vh, calc(100vw - 40px));
+            height: auto;
             border: 1px solid #2a4644;
             cursor: pointer;
             background: #fff;
@@ -55,6 +56,8 @@
         }
 
         .controls {
+            flex: 1 1 300px;
+            max-width: 400px;
             background: #f8f8f6;
             padding: 30px;
             border: 1px solid #2a4644;
@@ -165,12 +168,32 @@
         }
 
         @media (max-width: 768px) {
+            body {
+                padding: 24px 16px;
+            }
+
+            h1 {
+                margin-bottom: 24px;
+                font-size: 1.5rem;
+            }
+
             .main-content {
-                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+
+            #gridCanvas {
+                width: min(70vh, calc(100vw - 32px));
             }
 
             .controls {
                 order: -1;
+                max-width: none;
+                padding: 20px;
+            }
+
+            /* iOS zooms in on focus for inputs under 16px */
+            .color-select {
+                font-size: 16px;
             }
         }
     </style>
